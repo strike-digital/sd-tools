@@ -103,7 +103,7 @@ class STRIKE_OT_extract_node_to_parameter(bpy.types.Operator):
             if ng == node_tree:
                 break
         else:
-            
+
             return False
 
         if not node_tree.nodes.active:
@@ -111,7 +111,7 @@ class STRIKE_OT_extract_node_to_parameter(bpy.types.Operator):
         return True
 
     def execute(self, context: bpy.types.Context):
-        node_tree = context.space_data.node_tree
+        node_tree: bpy.types.NodeTree = context.space_data.node_tree
         node: bpy.types.Node = context.active_node
         name = node.label if node.label else node.name
         to_socket = None
@@ -128,7 +128,6 @@ class STRIKE_OT_extract_node_to_parameter(bpy.types.Operator):
                     socket_type = to_socket.bl_idname
 
         socket = node_tree.inputs.new(socket_type, name)
-        value = getattr(node, self.prop_names[node.bl_idname])
         if node.bl_idname == "ShaderNodeValue":
             value = node.outputs[0].default_value
         else:
@@ -142,7 +141,17 @@ class STRIKE_OT_extract_node_to_parameter(bpy.types.Operator):
                 socket.min_value = rna.soft_min
             if hasattr(socket, "max_value") and not socket.default_value > rna.soft_min:
                 socket.max_value = rna.soft_max
-        print(context.active_node)
+
+        bpy.ops.ed.undo_push()
+        input_node = node_tree.nodes.new("NodeGroupInput")
+        input_node.location = node.location
+        for output in input_node.outputs[:-2]:
+            output.hide = True
+
+        if to_socket:
+            node_tree.links.new(input_node.outputs[-2], to_socket)
+        node_tree.nodes.active = input_node
+        node_tree.nodes.remove(node)
         return {"FINISHED"}
 
 
