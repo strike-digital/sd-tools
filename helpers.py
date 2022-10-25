@@ -3,46 +3,12 @@ from dataclasses import dataclass
 from typing import Literal
 from bpy.types import Operator, Panel, Menu, Context, UILayout
 from bpy.props import StringProperty
+from .ui_helpers import wrap_text
 
 
 def dump(obj, text):
     for attr in dir(obj):
         print("%r.%s = %s" % (obj, attr, getattr(obj, attr)))
-
-
-def wrap_text(self, context: Context, text: str, layout: UILayout, centered: bool = False) -> list[str]:
-    """Take a string and draw it over multiple lines so that it is never concatenated."""
-    return_text = []
-    row_text = ''
-
-    width = context.region.width
-    system = context.preferences.system
-    ui_scale = system.ui_scale
-    width = (4 / (5 * ui_scale)) * width
-
-    dpi = 72 if system.ui_scale >= 1 else system.dpi
-    blf.size(0, 11, dpi)
-
-    for word in text.split():
-        word = f' {word}'
-        line_len, _ = blf.dimensions(0, row_text + word)
-
-        if line_len <= (width - 16):
-            row_text += word
-        else:
-            return_text.append(row_text)
-            row_text = word
-
-    if row_text:
-        return_text.append(row_text)
-
-    for text in return_text:
-        row = layout.row()
-        if centered:
-            row.alignment = "CENTER"
-        row.label(text=text)
-
-    return return_text
 
 
 @dataclass
@@ -197,7 +163,7 @@ class BPanel():
 
 
 @dataclass
-class Op():
+class BOperator():
     """A decorator for defining blender Operators that helps to cut down on boilerplate code,
     and adds better functionality for autocomplete.
     To use it, add it as a decorator to the operator class, with whatever arguments you want.

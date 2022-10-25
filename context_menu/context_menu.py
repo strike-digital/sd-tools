@@ -1,6 +1,6 @@
 import bpy
 import bpy.types as btypes
-from ..helpers import Op
+from ..helpers import BMenu, BOperator
 
 
 def get_node_tree(context) -> btypes.NodeTree:
@@ -19,7 +19,7 @@ prop_names = {
 }
 
 
-@Op("strike", label="Extract property", undo=True)
+@BOperator("strike", label="Extract property", undo=True)
 class STRIKE_OT_extract_node_prop(btypes.Operator):
     """Extract this value from a node into a separate input node"""
 
@@ -88,7 +88,7 @@ class STRIKE_OT_extract_node_prop(btypes.Operator):
         return {"FINISHED"}
 
 
-@Op("strike", label="Extract as parameter", undo=True)
+@BOperator("strike", label="Extract as parameter", undo=True)
 class STRIKE_OT_extract_node_to_parameter(btypes.Operator):
     """Extract this node as an input paramater for this node group"""
 
@@ -228,7 +228,7 @@ class STRIKE_OT_extract_node_to_parameter(btypes.Operator):
         return {"FINISHED"}
 
 
-@Op("strike", label="Connect to group input", undo=True)
+@BOperator("strike", label="Connect to group input", undo=True)
 class STRIKE_OT_connect_prop_to_group_input(btypes.Operator):
     """Connect this input to an existing group input"""
 
@@ -259,10 +259,7 @@ class STRIKE_OT_connect_prop_to_group_input(btypes.Operator):
         if nodes.active and nodes.active.select and nodes.active.type == "GROUP_INPUT":
             node = nodes.active
         else:
-            bpy.ops.node.add_node(
-                "INVOKE_DEFAULT",
-                type="NodeGroupInput"
-            )
+            bpy.ops.node.add_node("INVOKE_DEFAULT", type="NodeGroupInput")
             node = context.active_node
             node.location.x = orig_node.location.x - 20 - node.width
             for i, output in enumerate(node.outputs):
@@ -276,10 +273,11 @@ class STRIKE_OT_connect_prop_to_group_input(btypes.Operator):
         return {"FINISHED"}
 
 
+@BMenu(label="Connect to group input")
 class STRIKE_MT_group_input_menu(btypes.Menu):
-    bl_label = "Connect to group input"
-    bl_idname = "STRIKE_MT_group_input_menu"
-    
+    # bl_label = "Connect to group input"
+    # bl_idname = "STRIKE_MT_group_input_menu"
+
     def draw(self, context: btypes.Context):
         ng = get_node_tree(context)
         layout: btypes.UILayout = self.layout

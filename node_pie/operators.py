@@ -2,14 +2,13 @@ import bpy
 import json
 from pathlib import Path
 from bpy.types import Operator
+from ..helpers import BOperator
 from . import FILE_VERSION
 
 
+@BOperator("node_pie", label="Add node", idname="add_node", undo=True)
 class STRIKE_OT_node_pie_add(Operator):
     """Add a node to the node tree"""
-    bl_idname = "node_pie.add_node"
-    bl_label = "Add node"
-    bl_options = {'REGISTER', 'UNDO'}
 
     type: bpy.props.StringProperty(name="Type", description="Node type to add", default="FunctionNodeInputVector")
     use_transform: bpy.props.BoolProperty(default=True)
