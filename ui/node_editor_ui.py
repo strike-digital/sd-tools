@@ -1,5 +1,5 @@
 import bpy
-from ..helpers import BPanel
+from ..btypes import BPanel
 
 
 @BPanel(space_type="NODE_EDITOR", region_type="UI", label="Info", parent="NODE_PT_active_node_generic")

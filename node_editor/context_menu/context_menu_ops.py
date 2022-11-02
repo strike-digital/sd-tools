@@ -1,11 +1,7 @@
 import bpy
-import bpy.types as btypes
-from ..helpers import BMenu, BOperator
-
-
-def get_node_tree(context) -> btypes.NodeTree:
-    return context.area.spaces.active.path[-1].node_tree
-
+from bpy import types as btypes
+from ...btypes import BOperator
+from ...functions import get_active_node_tree
 
 prop_names = {
     "FunctionNodeInputInt": "integer",
@@ -19,7 +15,7 @@ prop_names = {
 }
 
 
-@BOperator("strike", label="Extract property", undo=True)
+@BOperator("strike", label="Extract to node", undo=True)
 class STRIKE_OT_extract_node_prop(btypes.Operator):
     """Extract this value from a node into a separate input node"""
 
@@ -41,7 +37,7 @@ class STRIKE_OT_extract_node_prop(btypes.Operator):
         if not hasattr(context, "button_pointer") or context.area.type != "NODE_EDITOR":
             return False
 
-        node_tree = get_node_tree(context)
+        node_tree = get_active_node_tree(context)
         if not node_tree:
             return False
 
@@ -88,8 +84,118 @@ class STRIKE_OT_extract_node_prop(btypes.Operator):
         return {"FINISHED"}
 
 
-@BOperator("strike", label="Extract as parameter", undo=True)
-class STRIKE_OT_extract_node_to_parameter(btypes.Operator):
+@BOperator("strike", label="Extract to named attribute", undo=True)
+class STRIKE_OT_extract_node_prop_to_named_attr(btypes.Operator):
+    """Extract this value to a named attribute"""
+
+    types = {
+        "INT": "INT",
+        "VALUE": "FLOAT",
+        "BOOLEAN": "BOOLEAN",
+        "VECTOR": "FLOAT_VECTOR",
+        "RGBA": "FLOAT_COLOR",
+        "RGB": "FLOAT_COLOR",
+    }
+
+    prop_names = prop_names
+
+    @classmethod
+    def poll(cls, context):
+        if not hasattr(context, "button_pointer") or context.area.type != "NODE_EDITOR":
+            return False
+
+        node_tree = get_active_node_tree(context)
+        if not node_tree or node_tree.type != "GEOMETRY":
+            return False
+
+        socket = context.button_pointer
+        if not socket or not hasattr(socket, "is_output") or socket.is_output or socket.type not in cls.types:
+            return False
+        return True
+
+    def invoke(self, context: btypes.Context, event: btypes.Event):
+        socket: btypes.NodeSocket = context.button_pointer
+        orig_node = socket.node
+
+        bpy.ops.node.add_node(
+            "INVOKE_DEFAULT",
+            type="GeometryNodeInputNamedAttribute",
+        )
+
+        node = context.active_node
+        self.node = node
+        node.label = socket.label if socket.label else socket.name
+        node.location.x = orig_node.location.x - 20 - node.width
+        node.location.y += 40
+        node.data_type = self.types[socket.type]
+
+        bpy.ops.node.translate_attach("INVOKE_DEFAULT")
+
+        for output in node.outputs:
+            if output.enabled:
+                break
+        # output = node.outputs[0]
+        node_tree = context.area.spaces.active.path[-1].node_tree
+        node_tree.links.new(output, socket)
+        return {"FINISHED"}
+        # return context.window_manager.invoke_props_popup(self, event)
+
+    def draw(self, context: btypes.Context):
+        layout = self.layout
+        layout.activate_init = True
+        row = layout.row()
+        row.activate_init = True
+        row.active_default = True
+        context.active_node.inputs[0].draw(context, row, context.active_node, "hoho")
+        # layout.prop(self.node.inputs[0], "default_value")
+        # layout.template_node_view(context.space_data.node_tree, context.active_node, context.active_node.inputs[0])
+
+    def execute(self, context: btypes.Context):
+        return {"FINISHED"}
+
+
+@BOperator("strike", label="Extract to new group input", undo=True)
+class STRIKE_OT_extract_node_prop_to_group_input(btypes.Operator):
+    """Extract this property as an input paramater for this node group"""
+
+    @classmethod
+    def poll(cls, context):
+        if not hasattr(context, "button_pointer") or context.area.type != "NODE_EDITOR":
+            return False
+
+        node_tree = get_active_node_tree(context)
+        if not node_tree or node_tree.type != "GEOMETRY":
+            return False
+
+        socket = context.button_pointer
+        if not socket or not hasattr(socket, "is_output") or socket.is_output:
+            return False
+        return True
+
+    def execute(self, context):
+        socket: btypes.NodeSocket = context.button_pointer
+        node_tree = get_active_node_tree(context)
+        orig_node = socket.node
+        if not (context.active_node and context.active_node.type == "GROUP_INPUT"):
+            bpy.ops.node.add_node(
+                "INVOKE_DEFAULT",
+                type="NodeGroupInput",
+            )
+            bpy.ops.node.translate_attach("INVOKE_DEFAULT")
+            node = context.active_node
+            node.location.x = orig_node.location.x - 20 - node.width
+            node.location.y += 40
+
+        node = context.active_node
+        node.label = socket.label if socket.label else socket.name
+
+        node_tree.links.new(node.outputs[-1], socket)
+
+        return {"FINISHED"}
+
+
+@BOperator("strike", label="Extract to group input", undo=True)
+class STRIKE_OT_extract_node_to_group_input(btypes.Operator):
     """Extract this node as an input paramater for this node group"""
 
     types = {
@@ -99,7 +205,6 @@ class STRIKE_OT_extract_node_to_parameter(btypes.Operator):
         "GeometryNodeInputMaterial": "NodeSocketMaterial",
         "FunctionNodeInputBool": "NodeSocketBool",
         "FunctionNodeInputColor": "NodeSocketColor",
-        # "GeometryNodeObjectInfo": "NodeSocketObject",
         "FunctionNodeInputString": "NodeSocketString",
     }
 
@@ -112,7 +217,7 @@ class STRIKE_OT_extract_node_to_parameter(btypes.Operator):
         if context.area.type != "NODE_EDITOR":
             return False
 
-        node_tree = get_node_tree(context)
+        node_tree = get_active_node_tree(context)
         if not node_tree:
             return False
 
@@ -124,12 +229,12 @@ class STRIKE_OT_extract_node_to_parameter(btypes.Operator):
 
             return False
 
-        if not node_tree.nodes.active:
+        if not node_tree.nodes.active or node_tree.nodes.active.bl_idname not in cls.types:
             return False
         return True
 
     def execute(self, context: btypes.Context):
-        node_tree = get_node_tree(context)
+        node_tree = get_active_node_tree(context)
         # node_tree: btypes.NodeTree = context.space_data.node_tree
         node: btypes.Node = context.active_node
         socket_name = node.label if node.label else node.name
@@ -191,7 +296,6 @@ class STRIKE_OT_extract_node_to_parameter(btypes.Operator):
                         # find the new key and change that property
                         keys = get_modifier_input_names(modifier)
                         keys.difference_update(inputs[modifier.name])
-                        inputs[modifier.name]
                         new_key = list(keys)[0]
                         modifier[new_key] = value
 
@@ -212,12 +316,12 @@ class STRIKE_OT_extract_node_to_parameter(btypes.Operator):
 
         # Hide the newly created socket from other input nodes
         for n in node_tree.nodes:
-            if n.type == "GROUP_INPUT":
-                shown = [o for o in n.outputs if not o.hide and not o.links]
-                if len(shown) <= 1:
-                    for o in n.outputs[:-1]:
-                        if not o.links:
-                            o.hide = True
+            if n.type == "GROUP_INPUT" and n != input_node:
+                # shown = [o for o in n.outputs if not o.hide and not o.links]
+                for o in n.outputs[:-1]:
+                    if not o.links:
+                        o.hide = True
+                # if len(shown) <= 1:
 
         # Relink the new group input node
         if to_socket:
@@ -239,7 +343,7 @@ class STRIKE_OT_connect_prop_to_group_input(btypes.Operator):
         if not hasattr(context, "button_pointer") or context.area.type != "NODE_EDITOR":
             return False
 
-        node_tree = get_node_tree(context)
+        node_tree = get_active_node_tree(context)
         if not node_tree:
             return False
 
@@ -249,7 +353,7 @@ class STRIKE_OT_connect_prop_to_group_input(btypes.Operator):
         return True
 
     def execute(self, context: btypes.Context):
-        ng = get_node_tree(context)
+        ng = get_active_node_tree(context)
         socket = context.button_pointer
         orig_node = socket.node
         nodes = ng.nodes
@@ -271,56 +375,3 @@ class STRIKE_OT_connect_prop_to_group_input(btypes.Operator):
         output.hide = False
         links.new(output, socket)
         return {"FINISHED"}
-
-
-@BMenu(label="Connect to group input")
-class STRIKE_MT_group_input_menu(btypes.Menu):
-    # bl_label = "Connect to group input"
-    # bl_idname = "STRIKE_MT_group_input_menu"
-
-    def draw(self, context: btypes.Context):
-        ng = get_node_tree(context)
-        layout: btypes.UILayout = self.layout
-        for i, socket in enumerate(ng.inputs):
-            row = layout.row(align=True)
-            # row.template_node_socket()
-            op = row.operator(STRIKE_OT_connect_prop_to_group_input.bl_idname, text=socket.name)
-            op.input_index = i
-
-
-def button_context_menu_draw(self, context):
-    layout: btypes.UILayout = self.layout
-    operators = [STRIKE_OT_extract_node_prop, STRIKE_OT_connect_prop_to_group_input]
-    for op in operators:
-        if op.poll(context):
-            layout.separator()
-
-    operator = STRIKE_OT_extract_node_prop
-    if operator.poll(context):
-        layout.operator(operator.bl_idname, icon="NODE")
-
-    operator = STRIKE_OT_connect_prop_to_group_input
-    if operator.poll(context):
-        layout.menu(STRIKE_MT_group_input_menu.bl_idname, icon="NODE")
-        # layout.operator(operator.bl_idname, icon="NODE")
-
-
-def node_context_menu_draw(self, context):
-    layout: btypes.UILayout = self.layout
-    if STRIKE_OT_extract_node_to_parameter.poll(context):
-        layout.separator()
-        operator = STRIKE_OT_extract_node_to_parameter
-
-        layout.operator(operator.bl_idname, icon="NODE")
-        op = layout.operator(operator.bl_idname, text=operator.bl_label + " (without subtype)", icon="NODE")
-        op.with_subtype = False
-
-
-def register():
-    btypes.UI_MT_button_context_menu.append(button_context_menu_draw)
-    btypes.NODE_MT_context_menu.append(node_context_menu_draw)
-
-
-def unregister():
-    btypes.UI_MT_button_context_menu.remove(button_context_menu_draw)
-    btypes.NODE_MT_context_menu.remove(node_context_menu_draw)

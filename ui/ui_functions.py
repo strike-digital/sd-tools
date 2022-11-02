@@ -2,17 +2,16 @@ import bpy
 import blf
 from bpy.types import UILayout, Context
 
-
 """For useful functions related to UI"""
 
 
 def multi_line_operator(
-    layout: UILayout,
-    operator: str,
-    lines: list[str],
-    line_spacing: float = .85,
-    padding: float=.4,
-    icon: str = "NONE",
+        layout: UILayout,
+        operator: str,
+        lines: list[str],
+        line_spacing: float = .85,
+        padding: float = .4,
+        icon: str = "NONE",
 ):
     """Draw an operator with a multi line label"""
     # Draw the text over multiple rows in a column
@@ -23,7 +22,7 @@ def multi_line_operator(
         row.alignment = "CENTER"
         row.label(text=line)
 
-    # The scale needed to cover all of the text with the button
+    # The scale needed to cover all the text with the button
     scale = len(lines) * col.scale_y + padding
     col = layout.column(align=True)
 

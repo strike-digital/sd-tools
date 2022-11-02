@@ -1,14 +1,11 @@
-import blf
 from dataclasses import dataclass
 from typing import Literal
 from bpy.types import Operator, Panel, Menu, Context, UILayout
 from bpy.props import StringProperty
-from .ui_helpers import wrap_text
+from .ui.ui_functions import wrap_text
+"""A module for easier definition of blender types (operators, panels, menus etc.)"""
 
-
-def dump(obj, text):
-    for attr in dir(obj):
-        print("%r.%s = %s" % (obj, attr, getattr(obj, attr)))
+__all__ = ("BMenu", "BOperator", "BPanel")
 
 
 @dataclass
