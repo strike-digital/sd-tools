@@ -15,6 +15,19 @@ prop_names = {
 }
 
 
+def hide_unused_outputs(node, exclude: set = ()):
+    """If exclude, hide all outputs that are not in exclude, otherwise, hide all node outputs that have no links"""
+    outputs = node.outputs
+    exclude = {outputs[i] for i in exclude} or set()
+    for i, output in enumerate(outputs):
+        if exclude:
+            if outputs[i] not in exclude:
+                output.hide = True
+        else:
+            if not output.links:
+                output.hide = True
+
+
 @BOperator("strike", label="Extract to node", undo=True)
 class STRIKE_OT_extract_node_prop(btypes.Operator):
     """Extract this value from a node into a separate input node"""
@@ -190,7 +203,11 @@ class STRIKE_OT_extract_node_prop_to_group_input(btypes.Operator):
         node.label = socket.label if socket.label else socket.name
 
         node_tree.links.new(node.outputs[-1], socket)
+        hide_unused_outputs(node, exclude={-1, -2})
 
+        for node in node_tree.nodes:
+            if node.bl_idname == "NodeGroupInput":
+                node.outputs[-2].hide = True
         return {"FINISHED"}
 
 
@@ -366,12 +383,128 @@ class STRIKE_OT_connect_prop_to_group_input(btypes.Operator):
             bpy.ops.node.add_node("INVOKE_DEFAULT", type="NodeGroupInput")
             node = context.active_node
             node.location.x = orig_node.location.x - 20 - node.width
-            for i, output in enumerate(node.outputs):
-                if i != self.input_index and i != len(node.outputs) - 1:
-                    output.hide = True
+            hide_unused_outputs(node, exclude={self.input_index, -1})
             bpy.ops.node.translate_attach_remove_on_cancel("INVOKE_DEFAULT")
 
         output = node.outputs[self.input_index]
         output.hide = False
         links.new(output, socket)
+        return {"FINISHED"}
+
+
+@BOperator("strike", label="Edit socket", undo=True)
+class STRIKE_OT_edit_group_socket_from_node(btypes.Operator):
+    """Edit the last linked socket of the currently selected group input/output"""
+
+    @classmethod
+    def poll(cls, context):
+        if context.area.type != "NODE_EDITOR":
+            return False
+
+        node_tree = get_active_node_tree(context)
+        if not node_tree:
+            return False
+
+        # Check to see whether this is a material or compositor, rather than a node group
+        for ng in bpy.data.node_groups:
+            if ng == node_tree:
+                break
+        else:
+            return False
+
+        node = node_tree.nodes.active
+        if not node or node.bl_idname not in {"NodeGroupInput", "NodeGroupOutput"}:
+            return False
+        return True
+
+    def invoke(self, context: btypes.Context, event):
+        node_tree = get_active_node_tree(context)
+        node: btypes.Node = context.active_node
+        is_group_input = node.bl_idname == "NodeGroupInput"
+        self.is_group_input = is_group_input
+        sockets = node.outputs if is_group_input else node.inputs
+        nt_sockets = node_tree.inputs if is_group_input else node_tree.outputs
+        for i, socket in enumerate(list(sockets)[::-1]):
+            if socket.links and not socket.hide:
+                self.socket = list(nt_sockets)[::-1][i - 1]
+                return context.window_manager.invoke_popup(self)
+        return {"FINISHED"}
+
+    def draw(self, context):
+        layout = self.layout
+        layout.label(text="Rename socket:")
+        socket = self.socket
+        layout.activate_init = True
+        layout.prop(socket, "name", text="")
+
+        # Taken directly from the node input panel draw script
+        # Mimicking property split.
+        layout.use_property_split = False
+        layout.use_property_decorate = False
+        layout_row = layout.row(align=True)
+        layout_split = layout_row.split(factor=0.4, align=True)
+
+        label_column = layout_split.column(align=True)
+        label_column.alignment = 'RIGHT'
+        # Menu to change the socket type.
+        label_column.label(text="Type")
+        property_row = layout_split.row(align=True)
+
+        op = property_row.operator_menu_enum(
+            "node.tree_socket_change_type",
+            "socket_type",
+            text=socket.bl_label if socket.bl_label else socket.bl_idname,
+        )
+        op.in_out = "IN" if self.is_group_input else "OUT"
+
+        layout.use_property_split = True
+        layout.use_property_decorate = False
+        # layout.prop(socket, "name")
+        # Display descriptions only for Geometry Nodes, since it's only used in the modifier panel.
+        if get_active_node_tree(context).type == 'GEOMETRY':
+            layout.prop(socket, "description")
+            field_socket_prefixes = {
+                "NodeSocketInt",
+                "NodeSocketColor",
+                "NodeSocketVector",
+                "NodeSocketBool",
+                "NodeSocketFloat",
+            }
+            is_field_type = any(socket.bl_socket_idname.startswith(prefix) for prefix in field_socket_prefixes)
+            if is_field_type:
+                if not self.is_group_input:
+                    layout.prop(socket, "attribute_domain")
+                layout.prop(socket, "default_attribute_name")
+        socket.draw(context, layout)
+
+    def execute(self, context: btypes.Context):
+        return {"FINISHED"}
+
+
+@BOperator("strike", label="Collapse unused inputs", undo=True)
+class STRIKE_OT_collapse_group_input_nodes(btypes.Operator):
+    """Hide all unused sockets from all of the group input nodes in this node tree"""
+
+    @classmethod
+    def poll(cls, context):
+        if context.area.type != "NODE_EDITOR":
+            return False
+
+        node_tree = get_active_node_tree(context)
+        if not node_tree:
+            return False
+
+        # Check to see whether this is a material or compositor, rather than a node group
+        for ng in bpy.data.node_groups:
+            if ng == node_tree:
+                break
+        else:
+            return False
+        return True
+
+    def execute(self, context):
+        node_tree = get_active_node_tree(context)
+        for node in node_tree.nodes:
+            if node.bl_idname == "NodeGroupInput":
+                hide_unused_outputs(node, exclude={-1})
         return {"FINISHED"}

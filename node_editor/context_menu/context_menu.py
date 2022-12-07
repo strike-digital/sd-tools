@@ -9,6 +9,8 @@ from .context_menu_ops import (
     STRIKE_OT_connect_prop_to_group_input as connect_to_group_input_op,
     STRIKE_OT_extract_node_prop_to_named_attr as extract_to_named_attr_op,
     STRIKE_OT_extract_node_prop_to_group_input as extract_prop_to_group_input_op,
+    STRIKE_OT_edit_group_socket_from_node as rename_group_socket_op,
+    STRIKE_OT_collapse_group_input_nodes as collapse_group_inputs_op,
 )
 from ...btypes import BMenu
 
@@ -50,12 +52,10 @@ def button_context_menu_draw(self, context):
     for op in operators:
         if op.poll(context):
             layout.separator()
+            break
 
     if extract_prop_op.poll(context):
         layout.operator(extract_prop_op.bl_idname, icon="NODE")
-
-    # if extract_prop_to_group_input_op.poll(context):
-    # layout.operator(extract_prop_to_group_input_op.bl_idname, icon="NODE")
 
     if extract_to_named_attr_op.poll(context):
         layout.operator(extract_to_named_attr_op.bl_idname, icon="NODE")
@@ -66,13 +66,28 @@ def button_context_menu_draw(self, context):
 
 def node_context_menu_draw(self, context):
     layout: btypes.UILayout = self.layout
-    if extract_node_op.poll(context):
-        layout.separator()
-        operator = extract_node_op
+    layout.operator_context = "INVOKE_DEFAULT"
 
+    operators = [extract_node_op, rename_group_socket_op, collapse_group_inputs_op]
+    for op in operators:
+        if op.poll(context):
+            layout.separator()
+            break
+
+    operator = extract_node_op
+    if operator.poll(context):
+        layout.separator()
         layout.operator(operator.bl_idname, icon="NODE")
-        op = layout.operator(operator.bl_idname, text=operator.bl_label + " (without subtype)", icon="NODE")
-        op.with_subtype = False
+        # op = layout.operator(operator.bl_idname, text=operator.bl_label + " (without subtype)", icon="NODE")
+        # op.with_subtype = False
+
+    operator = rename_group_socket_op
+    if operator.poll(context):
+        layout.operator(operator.bl_idname, icon="NODE")
+
+    operator = collapse_group_inputs_op
+    if operator.poll(context):
+        layout.operator(operator.bl_idname, icon="NODE")
 
 
 def register():

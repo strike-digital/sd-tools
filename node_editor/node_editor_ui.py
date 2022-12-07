@@ -13,6 +13,9 @@ class STRIKE_PT_node_panel(bpy.types.Panel):
     def draw(self, context):
         layout = self.layout
         node = context.active_node
+        row = layout.row(align=True)
+        row.operator("strike.align_nodes")
+        row.scale_y = 2
 
         box = layout.column()
         box.use_property_split = True

@@ -256,7 +256,7 @@ class BOperator():
             wrap_text = wrap_text
 
             if self.dynamic_description:
-                bl_description: StringProperty(default=op_description)
+                bl_description: StringProperty(default=op_description, options={"HIDDEN"})
 
                 @classmethod
                 def description(cls, context, props):
