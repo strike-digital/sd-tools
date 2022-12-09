@@ -59,16 +59,16 @@ def register():
     km = addon.keymaps.new(name="Window")
     # insert keymap items here
     addon_keymaps.append(km)
-    kmi = km.keymap_items.new(
-        idname=STRIKE_OT_toggle_asset_browser.bl_idname,
-        type="SPACE",
-        value="PRESS",
-        shift=True,
-        ctrl=True,
-        alt=False,
-        oskey=False,
-    )
-    print(kmi)
+    # kmi = km.keymap_items.new(
+    #     idname=STRIKE_OT_toggle_asset_browser.bl_idname,
+    #     type="SPACE",
+    #     value="PRESS",
+    #     shift=True,
+    #     ctrl=True,
+    #     alt=False,
+    #     oskey=False,
+    # )
+    # print(kmi)
 
 
 def unregister():
@@ -78,6 +78,3 @@ def unregister():
             km.keymap_items.remove(kmi)
         wm.keyconfigs.addon.keymaps.remove(km)
     addon_keymaps.clear()
-
-
-print(STRIKE_OT_toggle_asset_browser.bl_idname)
