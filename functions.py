@@ -27,4 +27,3 @@ def get_active_area(screen, mouse_x, mouse_y):
     for area in screen.areas:
         if area.x < mouse_x < area.x + area.width and area.y < mouse_y < area.y + area.height:
             return area
-

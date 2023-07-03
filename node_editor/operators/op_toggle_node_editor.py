@@ -21,7 +21,8 @@ class STRIKE_OT_toggle_node_editor(bpy.types.Operator):
 
     def modal(self, context, event):
         # This needs to be run in the modal function for the area ui_type to update
-        bpy.ops.node.view_selected("INVOKE_DEFAULT")
+        if bpy.ops.node.view_selected.poll():
+            bpy.ops.node.view_selected("INVOKE_DEFAULT")
         return {"FINISHED"}
 
 
