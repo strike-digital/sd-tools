@@ -202,7 +202,8 @@ class STRIKE_OT_extract_node_prop_to_group_input(btypes.Operator):
         node = context.active_node
         node.label = socket.label if socket.label else socket.name
 
-        node_tree.links.new(node.outputs[-1], socket)
+        node_tree.inputs.new(type(socket).__name__, socket.name)
+        node_tree.links.new(node.outputs[-2], socket)
         hide_unused_outputs(node, exclude={-1, -2})
 
         for node in node_tree.nodes:
