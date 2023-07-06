@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from enum import Enum
 from typing import TYPE_CHECKING, Literal
 import bpy
 from bpy.types import Event, Operator, Panel, Menu, Context, UILayout
@@ -160,6 +161,48 @@ class BPanel():
         return Wrapped
 
 
+class Cursor(Enum):
+    """Wraps the poorly documented blender cursor functions to allow for auto-complete"""
+    DEFAULT = "DEFAULT"
+    NONE = 'NONE'
+    WAIT = 'WAIT'
+    CROSSHAIR = 'CROSSHAIR'
+    MOVE_X = 'MOVE_X'
+    MOVE_Y = 'MOVE_Y'
+    KNIFE = 'KNIFE'
+    TEXT = 'TEXT'
+    PAINT_BRUSH = 'PAINT_BRUSH'
+    PAINT_CROSS = 'PAINT_CROSS'
+    DOT = 'DOT'
+    ERASER = 'ERASER'
+    HAND = 'HAND'
+    SCROLL_X = 'SCROLL_X'
+    SCROLL_Y = 'SCROLL_Y'
+    SCROLL_XY = 'SCROLL_XY'
+    EYEDROPPER = 'EYEDROPPER'
+    PICK_AREA = 'PICK_AREA'
+    STOP = 'STOP'
+    COPY = 'COPY'
+    CROSS = 'CROSS'
+    MUTE = 'MUTE'
+    ZOOM_IN = 'ZOOM_IN'
+    ZOOM_OUT = 'ZOOM_OUT'
+
+    @classmethod
+    def set_icon(cls, value: str):
+        if isinstance(value, Enum):
+            value = value.name
+        bpy.context.window.cursor_modal_set(str(value))
+
+    @classmethod
+    def reset_icon(cls):
+        bpy.context.window.cursor_modal_set("DEFAULT")
+
+    @classmethod
+    def set_location(cls, location: tuple):
+        bpy.context.window.cursor_warp(location[0], location[1])
+
+
 @dataclass
 class BOperator():
     """A decorator for defining blender Operators that helps to cut down on boilerplate code,
@@ -255,6 +298,8 @@ class BOperator():
             bl_options = options
             layout: UILayout
             event: Event
+
+            cursor = Cursor
 
             wrap_text = wrap_text
 
