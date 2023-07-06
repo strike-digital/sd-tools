@@ -45,6 +45,39 @@ class STRIKE_MT_group_input_menu(btypes.Menu):
             layout.label(text="No compatible group inputs")
 
 
+@BMenu(label="Extract to named attribute")
+class STRIKE_MT_named_attribute_menu(btypes.Menu):
+
+    def draw(self, context: btypes.Context):
+        nt = context.space_data.node_tree
+        layout = self.layout
+
+        def get_attrs(nodes):
+            attrs = {}
+            for node in nodes:
+                if node.type == "GROUP" and node.node_tree:
+                    attrs.update(get_attrs(node.node_tree.nodes))
+                elif node.type == "INPUT_ATTRIBUTE":
+                    if (socket := node.inputs[0].default_value) and not node.inputs[0].links:
+                        attrs[socket] = node.data_type
+                elif node.type == "STORE_NAMED_ATTRIBUTE":
+                    if (socket := node.inputs[2].default_value) and not node.inputs[2].links:
+                        attrs[socket] = node.data_type
+            return attrs
+
+        attrs = get_attrs(nt.nodes)
+
+        if context.object:
+            attrs.update({v.name: "FLOAT" for v in context.object.vertex_groups})
+
+        op = layout.operator(extract_to_named_attr_op.bl_idname, text="New", icon="ADD")
+        op.name = ""
+        for attr, type in attrs.items():
+            op = layout.operator(extract_to_named_attr_op.bl_idname, text=attr)
+            op.name = attr
+            op.type = type
+
+
 def button_context_menu_draw(self, context):
     layout: btypes.UILayout = self.layout
     operators = [extract_prop_op, connect_to_group_input_op]
@@ -57,7 +90,7 @@ def button_context_menu_draw(self, context):
         layout.operator(extract_prop_op.bl_idname, icon="NODE")
 
     if extract_to_named_attr_op.poll(context):
-        layout.operator(extract_to_named_attr_op.bl_idname, icon="NODE")
+        layout.menu(STRIKE_MT_named_attribute_menu.bl_idname, icon="NODE")
 
     if connect_to_group_input_op.poll(context):
         layout.menu(STRIKE_MT_group_input_menu.bl_idname, icon="NODE")

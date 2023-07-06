@@ -1,10 +1,9 @@
 import bpy
-from bpy.types import Operator
 from ...btypes import BOperator
 
 
 @BOperator("strike")
-class STRIKE_OT_select_collection_objects(Operator):
+class STRIKE_OT_select_collection_objects(BOperator.type):
 
     @classmethod
     def poll(cls, context):
@@ -26,4 +25,3 @@ class STRIKE_OT_select_collection_objects(Operator):
             bpy.ops.outliner.collection_objects_deselect("INVOKE_DEFAULT")
         else:
             bpy.ops.outliner.collection_objects_select("INVOKE_DEFAULT")
-        return {"FINISHED"}

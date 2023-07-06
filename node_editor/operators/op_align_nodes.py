@@ -68,7 +68,7 @@ def organise_input_nodes(node):
 
 
 @BOperator("strike")
-class STRIKE_OT_align_nodes(bpy.types.Operator):
+class STRIKE_OT_align_nodes(BOperator.type):
     "Align the nodes in this node tree"
 
     @classmethod
@@ -79,9 +79,6 @@ class STRIKE_OT_align_nodes(bpy.types.Operator):
         return bool(nt)
 
     def execute(self, context):
-        nt = context.space_data.node_tree
-        nodes = nt.nodes
         node = context.active_node
         organise_input_nodes(node)
         print(get_node_tree(node))
-        return {"FINISHED"}

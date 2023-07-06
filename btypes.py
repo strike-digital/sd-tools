@@ -1,6 +1,7 @@
 from dataclasses import dataclass
-from typing import Literal
-from bpy.types import Operator, Panel, Menu, Context, UILayout
+from typing import TYPE_CHECKING, Literal
+import bpy
+from bpy.types import Event, Operator, Panel, Menu, Context, UILayout
 from bpy.props import StringProperty
 from .ui.ui_functions import wrap_text
 """A module for easier definition of blender types (operators, panels, menus etc.)"""
@@ -185,23 +186,13 @@ class BOperator():
         preset (bool): Display a preset button with the operators settings.
         blocking (bool): Block anything else from using the cursor.
         macro (bool): Use to check if an operator is a macro.
-        logging (int | bool): Whether to log when this operator is called.
-            Default is to use the class logging variable which can be set with set_logging() and is global.
     """
-
-    _logging = False
-
-    @classmethod
-    def set_logging(cls, enable):
-        """Set the global logging state for all operators"""
-        cls._logging = enable
 
     category: str
     idname: str = ""
     label: str = ""
     description: str = ""
     dynamic_description: bool = True
-    invoke: bool = True
     register: bool = True
     undo: bool = False
     undo_grouped: bool = False
@@ -212,23 +203,34 @@ class BOperator():
     preset: bool = False
     blocking: bool = False
     macro: bool = False
-    # The default is to use the class logging setting, unless this has a value other than -1.
-    # ik this is the same name as the module, but I don't care.
-    logging: int = -1
 
-    def __call__(self, cls):
+    # Here we need to do some cursed stuff to get type hinting to work
+    if TYPE_CHECKING:
+
+        @property
+        @classmethod
+        def type(cls):
+            """Inherit from this to get proper type hinting for operator classes defined with the BOperator decorator"""
+            return BOperatorType
+
+    def __call__(self, cls=None):
         """This takes the decorated class and populate's the bl_ attributes with either the supplied values,
         or a best guess based on the other values"""
-        cls_name_end = cls.__name__.split("OT_")[-1]
-        idname = f"{self.category}." + (self.idname or cls_name_end)
-        label = self.label or cls_name_end.replace("_", " ").title()
+        inherit_from = [cls, Operator]
+        if cls:
+            cls_name_end = cls.__name__.split("OT_")[-1]
+            idname = f"{self.category}." + (self.idname or cls_name_end)
+            label = self.label or cls_name_end.replace("_", " ").title()
 
-        if self.description:
-            op_description = self.description
-        elif cls.__doc__:
-            op_description = cls.__doc__
+            if self.description:
+                op_description = self.description
+            elif cls.__doc__:
+                op_description = cls.__doc__
+            else:
+                op_description = label
         else:
-            op_description = label
+            inherit_from = [Operator]
+            op_description = idname = label = ""
 
         options = {
             "REGISTER": self.register,
@@ -246,15 +248,17 @@ class BOperator():
         options = {k for k, v in options.items() if v}
         if hasattr(cls, "bl_options"):
             options = options.union(cls.bl_options)
-        log = self._logging if self.logging == -1 else bool(self.logging)
 
-        class Wrapped(cls, Operator):
+        class Wrapped(*inherit_from):
             bl_idname = idname
             bl_label = label
             bl_options = options
+            layout: UILayout
+            event: Event
 
             wrap_text = wrap_text
 
+            # Set up a description that can be set from the UI draw function
             if self.dynamic_description:
                 bl_description: StringProperty(default=op_description, options={"HIDDEN"})
 
@@ -267,17 +271,54 @@ class BOperator():
             else:
                 bl_description = op_description
 
-            if self.invoke:
+            def __init__(_self):
+                # Allow auto-complete for execute function return values
+                _self.FINISHED = {"FINISHED"}
+                _self.CANCELLED = {"CANCELLED"}
+                _self.PASS_THROUGH = {"PASS_THROUGH"}
+                _self.RUNNING_MODAL = {"RUNNING_MODAL"}
 
-                def invoke(_self, context, event):
-                    """Here we can log whenever an operator using this decorator is invoked"""
-                    if log:
-                        print(f"Invoke: {idname}")
-                    if hasattr(super(), "invoke"):
-                        return super().invoke(context, event)
-                    else:
-                        return _self.execute(context)
+            def call_popup(_self, width=300):
+                """Call a popup that shows the parameters of the operator, or a custom draw function.
+                Doesn't execute the operator.
+                This needs to be returned by the invoke method to work."""
+                return bpy.context.window_manager.invoke_popup(_self, width=width)
+
+            def call_popup_confirm(_self, width=300):
+                """Call a popup that shows the parameters of the operator (or a custom draw function),
+                and a confirmation button.
+                This needs to be returned by the invoke method to work."""
+                return bpy.context.window_manager.invoke_props_dialog(_self, width=width)
+
+            def call_popup_auto_confirm(_self):
+                """Call a popup that shows the parameters of the operator, or a custom draw function.
+                Every time the parameters of the operator are changed, the operator is executed automatically.
+                This needs to be returned by the invoke method to work."""
+                return bpy.context.window_manager.invoke_props_popup(_self, _self.event)
+
+            def invoke(_self, context, event):
+                """Wrap the invoke function so we can set some initial attributes"""
+                _self.event = event
+                if hasattr(super(), "invoke"):
+                    return super().invoke(context, event)
+                else:
+                    return _self.execute(context)
+
+            def execute(_self, context):
+                """Wrap the execute function to remove the need to return {"FINISHED"}"""
+                ret = super().execute(context)
+                if ret is None:
+                    return _self.FINISHED
+                return ret
 
         Wrapped.__doc__ = op_description
-        Wrapped.__name__ = cls.__name__
+        if cls:
+            Wrapped.__name__ = cls.__name__
         return Wrapped
+
+
+class BOperatorType(BOperator("")()):
+    """A type to inherit from that gives proper type hinting for classes using the @BOperator decorator"""
+
+
+BOperator.type = BOperatorType

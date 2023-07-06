@@ -3,7 +3,7 @@ from ...btypes import BOperator
 
 
 @BOperator("strike")
-class STRIKE_OT_toggle_asset_browser(bpy.types.Operator):
+class STRIKE_OT_toggle_asset_browser(BOperator.type):
 
     @classmethod
     def poll(cls, context):
@@ -23,11 +23,10 @@ class STRIKE_OT_toggle_asset_browser(bpy.types.Operator):
                         opened_area = a
 
         if opened_area:
-            print(opened_area.spaces.active.params.catalog_id)
             with context.temp_override(area=opened_area):
                 bpy.ops.screen.area_close()
             opened_area = None
-            return {"FINISHED"}
+            return self.FINISHED
 
         with context.temp_override(area=area):
             factor = 300 * context.preferences.view.ui_scale / area.height
@@ -45,7 +44,7 @@ class STRIKE_OT_toggle_asset_browser(bpy.types.Operator):
         new_area.ui_type = "ASSETS"
 
         def change_active_library():
-            new_area.spaces.active.params.asset_library_ref = "My Assets"
+            # new_area.spaces.active.params.asset_library_ref = "Assets"
             if area.type == "NODE_EDITOR":
                 if area.ui_type == "GeometryNodeTree":
                     new_area.spaces.active.params.catalog_id = 'c6ab2da9-d77d-4845-b128-83798299ec6f'
@@ -60,9 +59,7 @@ class STRIKE_OT_toggle_asset_browser(bpy.types.Operator):
         bpy.app.timers.register(change_active_library, first_interval=.001)
         # print(dir(new_area.spaces[0].params))
         # new_area.spaces[0].params.asset_library_ref = "Assets"
-        new_area.spaces
-
-        return {"FINISHED"}
+        # new_area.spaces
 
 
 addon_keymaps = []
