@@ -1,3 +1,4 @@
+from types import ModuleType
 import bpy
 import typing
 import inspect
@@ -13,8 +14,8 @@ __all__ = (
 
 blender_version = bpy.app.version
 
-modules = None
-ordered_classes = None
+modules: list[ModuleType] = []
+ordered_classes: list[object] = []
 
 
 def init():

@@ -1,4 +1,5 @@
 import bpy
+from bpy.types import KeyMap
 from ...btypes import BOperator
 
 
@@ -62,7 +63,7 @@ class STRIKE_OT_toggle_asset_browser(BOperator.type):
         # new_area.spaces
 
 
-addon_keymaps = []
+addon_keymaps: list[KeyMap] = []
 
 
 def register():

@@ -1,4 +1,5 @@
 import bpy
+from .node_editor.node_editor_ui import STRIKE_MT_align_menu_pie
 from .general.operators.op_select_collection_objects import STRIKE_OT_select_collection_objects
 from .general.operators.op_play_from_start import STRIKE_OT_play_from_start
 
@@ -30,6 +31,12 @@ def register():
         alt=True,
         ctrl=True,
     )
+    kmi = km.keymap_items.new(
+        "wm.call_menu_pie",
+        type="W",
+        value="PRESS",
+    )
+    kmi.properties.name = STRIKE_MT_align_menu_pie.bl_idname
     addon_keymaps.append(km)
 
 

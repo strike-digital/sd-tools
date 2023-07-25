@@ -1,4 +1,5 @@
 import bpy
+from bpy.types import KeyMap
 from ...btypes import BOperator
 
 
@@ -26,7 +27,7 @@ class STRIKE_OT_toggle_node_editor(BOperator.type):
         return self.FINISHED
 
 
-addon_keymaps = []
+addon_keymaps: list[KeyMap] = []
 
 
 def register():

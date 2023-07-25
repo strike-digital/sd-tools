@@ -1,5 +1,5 @@
 import bpy
-from bpy.types import Context, Material
+from bpy.types import Context
 from ...btypes import BOperator
 
 
@@ -25,6 +25,5 @@ class STRIKE_OT_set_eevee_transparency(BOperator.type):
             print("Can't get material")
             return
 
-        mat: Material
         mat.blend_method = "CLIP"
         mat.shadow_method = "CLIP"
