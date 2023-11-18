@@ -75,7 +75,8 @@ class STRIKE_PT_node_panel(bpy.types.Panel):
         socket = node.inputs[strike.node_input_idx]
 
         box.separator()
-        box.prop(socket, "default_value", text="Value")
+        if hasattr(socket, "default_value"):
+            box.prop(socket, "default_value", text="Value")
         box.prop(socket, "name", text="Display name")
         box.prop(socket, "identifier", text="Identifier")
         box.prop(socket, "bl_idname")
