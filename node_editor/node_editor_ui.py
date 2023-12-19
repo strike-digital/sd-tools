@@ -62,31 +62,32 @@ class STRIKE_PT_node_panel(bpy.types.Panel):
             box.prop(node, "shrink", text="Shrink to minimum", toggle=True)
             box.prop(node, "text")
 
-        box = layout.box().column()
-        box.use_property_split = True
-        box.use_property_decorate = True
+        if len(node.inputs):
+            box = layout.box().column()
+            box.use_property_split = True
+            box.use_property_decorate = True
 
-        row = box.row(align=True)
-        row.alignment = "CENTER"
-        row.label(text="Inputs")
+            row = box.row(align=True)
+            row.alignment = "CENTER"
+            row.label(text="Inputs")
 
-        strike = get_strike_settings(context)
-        box.template_list("STRIKE_UL_inputs", "", node, "inputs", strike, "node_input_idx")
-        socket = node.inputs[strike.node_input_idx]
+            strike = get_strike_settings(context)
+            box.template_list("STRIKE_UL_inputs", "", node, "inputs", strike, "node_input_idx")
+            socket = node.inputs[strike.node_input_idx]
 
-        box.separator()
-        if hasattr(socket, "default_value"):
-            box.prop(socket, "default_value", text="Value")
-        box.prop(socket, "name", text="Display name")
-        box.prop(socket, "identifier", text="Identifier")
-        box.prop(socket, "bl_idname")
-        box.prop(socket, "description", text="Description")
-        box.prop(socket, "display_shape", text="Shape")
-        box.prop(socket, "type")
-        box.prop(socket, "enabled", text="Enabled")
-        box.prop(socket, "hide", text="Hide")
-        box.prop(socket, "hide_value", text="Hide value")
-        box.prop(socket, "is_linked")
+            box.separator()
+            if hasattr(socket, "default_value"):
+                box.prop(socket, "default_value", text="Value")
+            box.prop(socket, "name", text="Display name")
+            box.prop(socket, "identifier", text="Identifier")
+            box.prop(socket, "bl_idname")
+            box.prop(socket, "description", text="Description")
+            box.prop(socket, "display_shape", text="Shape")
+            box.prop(socket, "type")
+            box.prop(socket, "enabled", text="Enabled")
+            box.prop(socket, "hide", text="Hide")
+            box.prop(socket, "hide_value", text="Hide value")
+            box.prop(socket, "is_linked")
 
 
 @BMenu()
