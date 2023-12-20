@@ -120,7 +120,7 @@ class DrawHandler:
     ):
         self.handler = space.draw_handler_add(
             func,
-            args,
+            tuple(args),
             region_type.value,
             draw_type.value,
         )

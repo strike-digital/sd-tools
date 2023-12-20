@@ -47,6 +47,15 @@ def register():
         value="PRESS",
         ctrl=True,
     )
+    kmi.properties.index = 1
+    kmi = km.keymap_items.new(
+        STRIKE_OT_switch_workspace.bl_idname,
+        type="TAB",
+        value="PRESS",
+        ctrl=True,
+        shift=True,
+    )
+    kmi.properties.index = -1
     addon_keymaps.append(km)
 
 
