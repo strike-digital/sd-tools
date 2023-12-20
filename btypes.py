@@ -14,7 +14,18 @@ from bpy.props import (
     PointerProperty,
     StringProperty,
 )
-from bpy.types import ID, Context, Event, Material, Menu, Object, Operator, Panel, PropertyGroup, UILayout
+from bpy.types import (
+    ID,
+    Context,
+    Event,
+    Material,
+    Menu,
+    Object,
+    Operator,
+    Panel,
+    PropertyGroup,
+    UILayout,
+)
 from mathutils import Vector
 
 """A module containing helpers to make defining blender types easier (panels, operators etc.)"""
@@ -239,7 +250,10 @@ class BPropertyGroup:
         return self.wrapped_cls
 
     def register(self):
-        bpy.utils.register_class(self.wrapped_cls)
+        try:
+            bpy.utils.register_class(self.wrapped_cls)
+        except ValueError:
+            pass
         setattr(self.id_type, self.name, PointerProperty(type=self.wrapped_cls))
 
     def unregister(self):

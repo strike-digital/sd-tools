@@ -56,7 +56,7 @@ class STRIKE_OT_switch_workspace(BOperator.type):
 
         area_sizes = {}
         for area in context.screen.areas:
-            area_sizes[area] = area.width + area.height
+            area_sizes[area] = area.width * area.height
 
         areas = [a for a in context.screen.areas]
         areas.sort(key=lambda a: area_sizes[a])
