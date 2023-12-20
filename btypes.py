@@ -1,11 +1,20 @@
+# from __future__ import annotations
+
 import inspect
-from enum import Enum
-from typing import TYPE_CHECKING, Any, Union, Literal, TypeVar
 from dataclasses import dataclass
+from enum import Enum
+from typing import TYPE_CHECKING, Any, Literal, TypeVar, Union
 
 import bpy
-from bpy.props import IntProperty, BoolProperty, FloatProperty, StringProperty, PointerProperty, FloatVectorProperty
-from bpy.types import Menu, Event, Panel, Object, Context, Material, Operator, UILayout
+from bpy.props import (
+    BoolProperty,
+    FloatProperty,
+    FloatVectorProperty,
+    IntProperty,
+    PointerProperty,
+    StringProperty,
+)
+from bpy.types import ID, Context, Event, Material, Menu, Object, Operator, Panel, PropertyGroup, UILayout
 from mathutils import Vector
 
 """A module containing helpers to make defining blender types easier (panels, operators etc.)"""
@@ -204,23 +213,37 @@ class BPanel:
 
 property_groups = []
 
+PropertyGroupClass = TypeVar("PropertyGroupClass", bound=PropertyGroup)
 
-@dataclass
+
+class BPropertyGroupBase(PropertyGroup):
+    pass
+
+
 class BPropertyGroup:
-    type: bpy.types.ID
-    name: str
+    type = BPropertyGroupBase
 
-    def __call__(self, cls):
+    def __init__(self, id_type: ID, name: str):
+        self.id_type = id_type
+        self.name = name
+
+    def __call__(self, cls: PropertyGroupClass) -> PropertyGroupClass:
         self.cls = cls
         global property_groups
         property_groups.append(self)
-        return cls
+
+        class Wrapped(cls, BPropertyGroupBase):
+            pass
+
+        self.wrapped_cls = Wrapped
+        return self.wrapped_cls
 
     def register(self):
-        setattr(self.type, self.name, PointerProperty(type=self.cls))
+        bpy.utils.register_class(self.wrapped_cls)
+        setattr(self.id_type, self.name, PointerProperty(type=self.wrapped_cls))
 
     def unregister(self):
-        delattr(self.type, self.name)
+        delattr(self.id_type, self.name)
 
 
 class Cursor(Enum):

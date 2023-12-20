@@ -1,7 +1,11 @@
 import bpy
-from .node_editor.node_editor_ui import STRIKE_MT_align_menu_pie
-from .general.operators.op_select_collection_objects import STRIKE_OT_select_collection_objects
+
 from .general.operators.op_play_from_start import STRIKE_OT_play_from_start
+from .general.operators.op_select_collection_objects import (
+    STRIKE_OT_select_collection_objects,
+)
+from .node_editor.node_editor_ui import STRIKE_MT_align_menu_pie
+from .workspace_switcher.op_switch_workspace import STRIKE_OT_switch_workspace
 
 addon_keymaps = []
 
@@ -37,6 +41,12 @@ def register():
         value="PRESS",
     )
     kmi.properties.name = STRIKE_MT_align_menu_pie.bl_idname
+    kmi = km.keymap_items.new(
+        STRIKE_OT_switch_workspace.bl_idname,
+        type="TAB",
+        value="PRESS",
+        ctrl=True,
+    )
     addon_keymaps.append(km)
 
 

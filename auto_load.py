@@ -1,10 +1,11 @@
-from types import ModuleType
-import bpy
-import typing
+import importlib
 import inspect
 import pkgutil
-import importlib
+import typing
 from pathlib import Path
+from types import ModuleType
+
+import bpy
 
 __all__ = (
     "init",
@@ -27,7 +28,6 @@ def init():
 
 
 def register():
-
     for module in modules.copy():
         if module.__name__ == __name__ or hasattr(module, "__no_reg__") and module.__no_reg__:
             modules.remove(module)
@@ -35,7 +35,7 @@ def register():
 
     # Custom attributes to prevent registering, and to enable proper registration order
     for cls in ordered_classes.copy():
-        if (hasattr(cls, "__no_reg__") and cls.__no_reg__):
+        if hasattr(cls, "__no_reg__") and cls.__no_reg__:
             ordered_classes.remove(cls)
 
     for cls in ordered_classes:
@@ -153,7 +153,8 @@ def iter_classes_in_module(module):
 
 def get_register_base_types():
     return set(
-        getattr(bpy.types, name) for name in [
+        getattr(bpy.types, name)
+        for name in [
             "Panel",
             "Operator",
             "PropertyGroup",
@@ -167,7 +168,8 @@ def get_register_base_types():
             "RenderEngine",
             "Gizmo",
             "GizmoGroup",
-        ])
+        ]
+    )
 
 
 # Find order to register to solve dependencies
