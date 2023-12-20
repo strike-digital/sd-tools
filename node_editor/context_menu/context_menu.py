@@ -1,17 +1,25 @@
-import bpy.types as btypes
 import bpy
+import bpy.types as btypes
 
-from .context_menu_ops import (
-    get_active_node_tree,
-    STRIKE_OT_extract_node_prop as extract_prop_op,
-    STRIKE_OT_extract_node_to_group_input as extract_node_op,
-    STRIKE_OT_connect_prop_to_group_input as connect_to_group_input_op,
-    STRIKE_OT_extract_node_prop_to_named_attr as extract_to_named_attr_op,
-    STRIKE_OT_extract_node_prop_to_group_input as extract_prop_to_group_input_op,
-    STRIKE_OT_edit_group_socket_from_node as rename_group_socket_op,
-    STRIKE_OT_collapse_group_input_nodes as collapse_group_inputs_op,
-)
 from ...btypes import BMenu
+from .context_menu_ops import (
+    SD_OT_collapse_group_input_nodes as collapse_group_inputs_op,
+)
+from .context_menu_ops import (
+    SD_OT_connect_prop_to_group_input as connect_to_group_input_op,
+)
+from .context_menu_ops import (
+    SD_OT_edit_group_socket_from_node as rename_group_socket_op,
+)
+from .context_menu_ops import SD_OT_extract_node_prop as extract_prop_op
+from .context_menu_ops import (
+    SD_OT_extract_node_prop_to_group_input as extract_prop_to_group_input_op,
+)
+from .context_menu_ops import (
+    SD_OT_extract_node_prop_to_named_attr as extract_to_named_attr_op,
+)
+from .context_menu_ops import SD_OT_extract_node_to_group_input as extract_node_op
+from .context_menu_ops import get_active_node_tree
 
 compatible_with = {
     "GEOMETRY": {"GEOMETRY"},
@@ -26,8 +34,7 @@ theme = bpy.context.preferences.themes[0].node_editor
 
 
 @BMenu(label="Connect to group input")
-class STRIKE_MT_group_input_menu(btypes.Menu):
-
+class SD_MT_group_input_menu(btypes.Menu):
     def draw(self, context: btypes.Context):
         ng = get_active_node_tree(context)
         layout: btypes.UILayout = self.layout
@@ -46,8 +53,7 @@ class STRIKE_MT_group_input_menu(btypes.Menu):
 
 
 @BMenu(label="Extract to named attribute")
-class STRIKE_MT_named_attribute_menu(btypes.Menu):
-
+class SD_MT_named_attribute_menu(btypes.Menu):
     def draw(self, context: btypes.Context):
         nt = context.space_data.node_tree
         layout = self.layout
@@ -90,10 +96,10 @@ def button_context_menu_draw(self, context):
         layout.operator(extract_prop_op.bl_idname, icon="NODE")
 
     if extract_to_named_attr_op.poll(context):
-        layout.menu(STRIKE_MT_named_attribute_menu.bl_idname, icon="NODE")
+        layout.menu(SD_MT_named_attribute_menu.bl_idname, icon="NODE")
 
     if connect_to_group_input_op.poll(context):
-        layout.menu(STRIKE_MT_group_input_menu.bl_idname, icon="NODE")
+        layout.menu(SD_MT_group_input_menu.bl_idname, icon="NODE")
 
 
 def node_context_menu_draw(self, context):

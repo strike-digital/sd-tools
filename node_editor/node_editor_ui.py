@@ -2,11 +2,11 @@ import bpy
 from bpy.types import Menu, UILayout
 
 from ..btypes import BMenu, BPanel
-from ..settings.prop_window_manager import get_strike_settings
-from .operators.op_align_nodes_axis import STRIKE_OT_align_nodes_axis
+from ..settings.prop_window_manager import get_sd_settings
+from .operators.op_align_nodes_axis import SD_OT_align_nodes_axis
 
 
-class STRIKE_UL_inputs(bpy.types.UIList):
+class SD_UL_inputs(bpy.types.UIList):
     def draw_item(self, context, layout, data, item, icon, active_data, active_propname):
         layout: UILayout = layout
         layout.prop(item, "name", text="", emboss=False)
@@ -17,7 +17,7 @@ class STRIKE_UL_inputs(bpy.types.UIList):
 
 
 @BPanel(space_type="NODE_EDITOR", region_type="UI", label="Info", parent="NODE_PT_active_node_generic")
-class STRIKE_PT_node_panel(bpy.types.Panel):
+class SD_PT_node_panel(bpy.types.Panel):
     @classmethod
     def poll(cls, context):
         if context.active_node:
@@ -71,9 +71,9 @@ class STRIKE_PT_node_panel(bpy.types.Panel):
             row.alignment = "CENTER"
             row.label(text="Inputs")
 
-            strike = get_strike_settings(context)
-            box.template_list("STRIKE_UL_inputs", "", node, "inputs", strike, "node_input_idx")
-            socket = node.inputs[strike.node_input_idx]
+            sd = get_sd_settings(context)
+            box.template_list("SD_UL_inputs", "", node, "inputs", sd, "node_input_idx")
+            socket = node.inputs[sd.node_input_idx]
 
             box.separator()
             if hasattr(socket, "default_value"):
@@ -91,7 +91,7 @@ class STRIKE_PT_node_panel(bpy.types.Panel):
 
 
 @BMenu()
-class STRIKE_MT_align_menu_pie(Menu):
+class SD_MT_align_menu_pie(Menu):
     @classmethod
     def poll(cls, context):
         if not context.space_data or context.area.type != "NODE_EDITOR":
@@ -100,7 +100,7 @@ class STRIKE_MT_align_menu_pie(Menu):
 
     def draw(self, context):
         layout = self.layout.menu_pie()
-        op = layout.operator(STRIKE_OT_align_nodes_axis.bl_idname, text="Align nodes X")
+        op = layout.operator(SD_OT_align_nodes_axis.bl_idname, text="Align nodes X")
         op.x = True
-        op = layout.operator(STRIKE_OT_align_nodes_axis.bl_idname, text="Align nodes Y")
+        op = layout.operator(SD_OT_align_nodes_axis.bl_idname, text="Align nodes Y")
         op.x = False

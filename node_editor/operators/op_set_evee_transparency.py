@@ -1,11 +1,11 @@
 import bpy
 from bpy.types import Context
+
 from ...btypes import BOperator
 
 
-@BOperator("strike")
-class STRIKE_OT_set_eevee_transparency(BOperator.type):
-
+@BOperator("sd")
+class SD_OT_set_eevee_transparency(BOperator.type):
     @classmethod
     def poll(cls, context):
         if context.area.type != "NODE_EDITOR":

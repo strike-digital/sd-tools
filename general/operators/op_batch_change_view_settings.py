@@ -1,15 +1,16 @@
 import bpy
 from bpy.props import FloatProperty
 from bpy.types import Context
+
 from ...btypes import BOperator
 
 
-@BOperator("strike", undo=True)
-class STRIKE_OT_batch_change_view_settings(BOperator.type):
+@BOperator("sd", undo=True)
+class SD_OT_batch_change_view_settings(BOperator.type):
     """Change view settings in all screens and viewports in the file"""
 
     focal_length: FloatProperty(name="Focal Length", subtype="DISTANCE_CAMERA")
-    clip_start: FloatProperty(name="Clip Start", subtype="DISTANCE", default=.01)
+    clip_start: FloatProperty(name="Clip Start", subtype="DISTANCE", default=0.01)
     clip_end: FloatProperty(name="Clip End", subtype="DISTANCE", default=1000)
 
     def invoke(self, context: Context, event):

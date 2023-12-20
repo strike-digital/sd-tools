@@ -5,9 +5,8 @@ from bpy.types import Context, PropertyGroup
 from ..btypes import BPropertyGroup
 
 
-@BPropertyGroup(bpy.types.WindowManager, "strike_tools")
-class StrikeSettings(PropertyGroup):
-
+@BPropertyGroup(bpy.types.WindowManager, "sd_tools")
+class SDSettings(PropertyGroup):
     # The index of the input being viewed
     def get_idx(self):
         node = bpy.context.active_node
@@ -19,5 +18,5 @@ class StrikeSettings(PropertyGroup):
     node_input_idx: IntProperty(get=get_idx, set=set_idx)
 
 
-def get_strike_settings(context: Context) -> StrikeSettings:
-    return context.window_manager.strike_tools
+def get_sd_settings(context: Context) -> SDSettings:
+    return context.window_manager.sd_tools

@@ -2,12 +2,12 @@ import bpy
 from bpy.props import StringProperty
 from bpy.types import Operator
 from mathutils import Vector
+
 from ..btypes import BOperator
 
 
-@BOperator("strike")
-class STRIKE_OT_dummy_import(Operator):
-
+@BOperator("sd")
+class SD_OT_dummy_import(Operator):
     asset_id: StringProperty()
 
     collection_name: StringProperty()
@@ -62,7 +62,7 @@ class STRIKE_OT_dummy_import(Operator):
 
             task.update_progress(task.progress.progress + 1)
             print("ho")
-            return .02
+            return 0.02
 
-        bpy.app.timers.register(update_progress, first_interval=.02)
+        bpy.app.timers.register(update_progress, first_interval=0.02)
         return {"FINISHED"}

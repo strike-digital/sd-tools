@@ -46,8 +46,8 @@ def safe_load_texture(file: Path):
     return texture
 
 
-@BOperator("strike")
-class STRIKE_OT_switch_workspace(BOperator.type):
+@BOperator("sd")
+class SD_OT_switch_workspace(BOperator.type):
     index: IntProperty(default=1)
 
     def invoke(self, context, event):

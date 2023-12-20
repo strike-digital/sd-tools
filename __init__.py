@@ -12,10 +12,10 @@
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 bl_info = {
-    "name": "Strike Tools",
+    "name": "SD Tools",
     "author": "Andrew Stevenson",
     "description": "",
-    "blender": (3, 0, 0),
+    "blender": (4, 0, 0),
     "version": (0, 0, 1),
     "location": "",
     "warning": "",

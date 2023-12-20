@@ -1,12 +1,13 @@
 from statistics import mean
+
 from bpy.props import BoolProperty
 from mathutils import Vector
+
 from ...btypes import BOperator
 
 
-@BOperator("strike")
-class STRIKE_OT_align_nodes_axis(BOperator.type):
-
+@BOperator("sd")
+class SD_OT_align_nodes_axis(BOperator.type):
     x: BoolProperty(default=True)
 
     @classmethod

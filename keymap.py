@@ -1,11 +1,11 @@
 import bpy
 
-from .general.operators.op_play_from_start import STRIKE_OT_play_from_start
+from .general.operators.op_play_from_start import SD_OT_play_from_start
 from .general.operators.op_select_collection_objects import (
-    STRIKE_OT_select_collection_objects,
+    SD_OT_select_collection_objects,
 )
-from .node_editor.node_editor_ui import STRIKE_MT_align_menu_pie
-from .workspace_switcher.op_switch_workspace import STRIKE_OT_switch_workspace
+from .node_editor.node_editor_ui import SD_MT_align_menu_pie
+from .workspace_switcher.op_switch_workspace import SD_OT_switch_workspace
 
 addon_keymaps = []
 
@@ -14,22 +14,22 @@ def register():
     addon = bpy.context.window_manager.keyconfigs.addon
     km = addon.keymaps.new(name="Window")
     # insert keymap items here
-    kmi = km.keymap_items.new(STRIKE_OT_play_from_start.bl_idname, type="SPACE", value="PRESS", shift=True)
+    kmi = km.keymap_items.new(SD_OT_play_from_start.bl_idname, type="SPACE", value="PRESS", shift=True)
     kmi = km.keymap_items.new(
-        STRIKE_OT_select_collection_objects.bl_idname,
+        SD_OT_select_collection_objects.bl_idname,
         type="LEFTMOUSE",
         value="PRESS",
         alt=True,
     )
     kmi = km.keymap_items.new(
-        STRIKE_OT_select_collection_objects.bl_idname,
+        SD_OT_select_collection_objects.bl_idname,
         type="LEFTMOUSE",
         value="PRESS",
         alt=True,
         shift=True,
     )
     kmi = km.keymap_items.new(
-        STRIKE_OT_select_collection_objects.bl_idname,
+        SD_OT_select_collection_objects.bl_idname,
         type="LEFTMOUSE",
         value="PRESS",
         alt=True,
@@ -40,16 +40,16 @@ def register():
         type="W",
         value="PRESS",
     )
-    kmi.properties.name = STRIKE_MT_align_menu_pie.bl_idname
+    kmi.properties.name = SD_MT_align_menu_pie.bl_idname
     kmi = km.keymap_items.new(
-        STRIKE_OT_switch_workspace.bl_idname,
+        SD_OT_switch_workspace.bl_idname,
         type="TAB",
         value="PRESS",
         ctrl=True,
     )
     kmi.properties.index = 1
     kmi = km.keymap_items.new(
-        STRIKE_OT_switch_workspace.bl_idname,
+        SD_OT_switch_workspace.bl_idname,
         type="TAB",
         value="PRESS",
         ctrl=True,

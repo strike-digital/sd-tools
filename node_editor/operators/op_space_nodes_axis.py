@@ -3,8 +3,8 @@
 # from mathutils import Vector
 # from ...btypes import BOperator
 
-# @BOperator("strike")
-# class STRIKE_OT_space_nodes_axis(BOperator.type):
+# @BOperator("sd")
+# class SD_OT_space_nodes_axis(BOperator.type):
 
 #     x: BoolProperty(default=True)
 

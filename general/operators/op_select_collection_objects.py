@@ -1,10 +1,10 @@
 import bpy
+
 from ...btypes import BOperator
 
 
-@BOperator("strike")
-class STRIKE_OT_select_collection_objects(BOperator.type):
-
+@BOperator("sd")
+class SD_OT_select_collection_objects(BOperator.type):
     @classmethod
     def poll(cls, context):
         if context.area.type != "OUTLINER":

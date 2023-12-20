@@ -1,6 +1,7 @@
 import bpy
 from bpy import types as btypes
 from bpy.props import StringProperty
+
 from ...btypes import BOperator
 from ...functions import get_active_node_tree
 
@@ -29,8 +30,8 @@ def hide_unused_outputs(node, exclude: set = ()):
                 output.hide = True
 
 
-@BOperator("strike", label="Extract to node", undo=True)
-class STRIKE_OT_extract_node_prop(BOperator.type):
+@BOperator("sd", label="Extract to node", undo=True)
+class SD_OT_extract_node_prop(BOperator.type):
     """Extract this value from a node into a separate input node"""
 
     types = {
@@ -96,8 +97,8 @@ class STRIKE_OT_extract_node_prop(BOperator.type):
         node_tree.links.new(output, socket)
 
 
-@BOperator("strike", label="Extract to named attribute", undo=True)
-class STRIKE_OT_extract_node_prop_to_named_attr(BOperator.type):
+@BOperator("sd", label="Extract to named attribute", undo=True)
+class SD_OT_extract_node_prop_to_named_attr(BOperator.type):
     """Extract this value to a named attribute"""
 
     types = {
@@ -170,8 +171,8 @@ class STRIKE_OT_extract_node_prop_to_named_attr(BOperator.type):
         return self.FINISHED
 
 
-@BOperator("strike", label="Extract to new group input", undo=True)
-class STRIKE_OT_extract_node_prop_to_group_input(BOperator.type):
+@BOperator("sd", label="Extract to new group input", undo=True)
+class SD_OT_extract_node_prop_to_group_input(BOperator.type):
     """Extract this property as an input paramater for this node group"""
 
     @classmethod
@@ -214,8 +215,8 @@ class STRIKE_OT_extract_node_prop_to_group_input(BOperator.type):
                 node.outputs[-2].hide = True
 
 
-@BOperator("strike", label="Extract to group input", undo=True)
-class STRIKE_OT_extract_node_to_group_input(BOperator.type):
+@BOperator("sd", label="Extract to group input", undo=True)
+class SD_OT_extract_node_to_group_input(BOperator.type):
     """Extract this node as an input paramater for this node group"""
 
     types = {
@@ -246,7 +247,6 @@ class STRIKE_OT_extract_node_to_group_input(BOperator.type):
             if ng == node_tree:
                 break
         else:
-
             return False
 
         if not node_tree.nodes.active or node_tree.nodes.active.bl_idname not in cls.types:
@@ -351,8 +351,8 @@ class STRIKE_OT_extract_node_to_group_input(BOperator.type):
         node_tree.nodes.remove(node)
 
 
-@BOperator("strike", label="Connect to group input", undo=True)
-class STRIKE_OT_connect_prop_to_group_input(BOperator.type):
+@BOperator("sd", label="Connect to group input", undo=True)
+class SD_OT_connect_prop_to_group_input(BOperator.type):
     """Connect this input to an existing group input"""
 
     input_index: bpy.props.IntProperty()
@@ -393,8 +393,8 @@ class STRIKE_OT_connect_prop_to_group_input(BOperator.type):
         links.new(output, socket)
 
 
-@BOperator("strike", label="Edit socket", undo=True)
-class STRIKE_OT_edit_group_socket_from_node(BOperator.type):
+@BOperator("sd", label="Edit socket", undo=True)
+class SD_OT_edit_group_socket_from_node(BOperator.type):
     """Edit the last linked socket of the currently selected group input/output"""
 
     @classmethod
@@ -446,7 +446,7 @@ class STRIKE_OT_edit_group_socket_from_node(BOperator.type):
         layout_split = layout_row.split(factor=0.4, align=True)
 
         label_column = layout_split.column(align=True)
-        label_column.alignment = 'RIGHT'
+        label_column.alignment = "RIGHT"
         # Menu to change the socket type.
         label_column.label(text="Type")
         property_row = layout_split.row(align=True)
@@ -462,7 +462,7 @@ class STRIKE_OT_edit_group_socket_from_node(BOperator.type):
         layout.use_property_decorate = False
         # layout.prop(socket, "name")
         # Display descriptions only for Geometry Nodes, since it's only used in the modifier panel.
-        if get_active_node_tree(context).type == 'GEOMETRY':
+        if get_active_node_tree(context).type == "GEOMETRY":
             layout.prop(socket, "description")
             field_socket_prefixes = {
                 "NodeSocketInt",
@@ -479,8 +479,8 @@ class STRIKE_OT_edit_group_socket_from_node(BOperator.type):
         socket.draw(context, layout)
 
 
-@BOperator("strike", label="Collapse unused inputs", undo=True)
-class STRIKE_OT_collapse_group_input_nodes(BOperator.type):
+@BOperator("sd", label="Collapse unused inputs", undo=True)
+class SD_OT_collapse_group_input_nodes(BOperator.type):
     """Hide all unused sockets from all of the group input nodes in this node tree"""
 
     @classmethod

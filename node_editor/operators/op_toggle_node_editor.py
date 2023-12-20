@@ -1,10 +1,11 @@
 import bpy
 from bpy.types import KeyMap
+
 from ...btypes import BOperator
 
 
-@BOperator("strike")
-class STRIKE_OT_toggle_node_editor(BOperator.type):
+@BOperator("sd")
+class SD_OT_toggle_node_editor(BOperator.type):
     """Quickly switch between the geometry and shader node editors"""
 
     @classmethod
@@ -36,7 +37,7 @@ def register():
     addon_keymaps.append(km)
 
     km.keymap_items.new(
-        idname=STRIKE_OT_toggle_node_editor.bl_idname,
+        idname=SD_OT_toggle_node_editor.bl_idname,
         type="BACK_SLASH",
         value="PRESS",
         shift=True,

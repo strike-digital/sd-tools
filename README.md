@@ -1,4 +1,4 @@
-# Strike Tools for blender
+# SD Tools for blender
 
 This is an addon I use for testing features and fixing small papercuts that I have with Blender. Feel free to download and try it, but be prepared for not everything to work and for an addon that is focussed on on my specific workflow rather than being as adaptable as possible.
 

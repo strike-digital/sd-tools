@@ -1,8 +1,9 @@
 import bpy
-from ...btypes import BOperator
-from ...functions import vec_min, vec_max
-from ...ui.ui_functions import dpifac
 from mathutils import Vector as V
+
+from ...btypes import BOperator
+from ...functions import vec_max, vec_min
+from ...ui.ui_functions import dpifac
 
 
 def get_input_nodes(node):
@@ -67,8 +68,8 @@ def organise_input_nodes(node):
         organise_input_nodes(node)
 
 
-@BOperator("strike")
-class STRIKE_OT_align_nodes(BOperator.type):
+@BOperator("sd")
+class SD_OT_align_nodes(BOperator.type):
     "Align the nodes in this node tree"
 
     @classmethod
