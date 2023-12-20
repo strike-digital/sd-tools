@@ -2,6 +2,5 @@
 *__pycache__
 *.idea
 *.vscode
-# workspace_thumbnails
 *.png
 !image_placeholder.png
