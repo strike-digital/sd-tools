@@ -1,9 +1,8 @@
+import os
 from collections import OrderedDict
 from dataclasses import dataclass
 from pathlib import Path
-from time import perf_counter
 
-import blf
 import bpy
 from bpy.props import IntProperty
 from bpy.types import Area
@@ -39,9 +38,12 @@ textures = {}
 
 def safe_load_texture(file: Path):
     global textures
-    if file in textures:
+    if file in textures and textures[file].modified_time == os.path.getmtime(file):
         return textures[file]
-    return DrawTexture(file)
+    texture = DrawTexture(file)
+    texture.modified_time = os.path.getmtime(file)
+    textures[file] = texture
+    return texture
 
 
 @BOperator("strike")
@@ -49,7 +51,6 @@ class STRIKE_OT_switch_workspace(BOperator.type):
     index: IntProperty(default=1)
 
     def invoke(self, context, event):
-        start = perf_counter()
         get_wswitcher_settings().set_access_time(context.workspace)
         self.workspace_names = [w.name for w in get_wswitcher_settings().ordered_workspace_list]
 
@@ -63,7 +64,7 @@ class STRIKE_OT_switch_workspace(BOperator.type):
 
         self.thumbnails_dir = Path(__file__).parent / "workspace_thumbnails"
         thumbnail_path = self.thumbnails_dir / f"{context.workspace.name}.png"
-        # bpy.ops.screen.screenshot(filepath=str(thumbnail_path))
+        bpy.ops.screen.screenshot(filepath=str(thumbnail_path))
 
         self.boxes: dict[str, WorkspaceBox] = OrderedDict()
         for name in self.workspace_names:
@@ -71,24 +72,18 @@ class STRIKE_OT_switch_workspace(BOperator.type):
 
         global textures
         file = self.thumbnails_dir / "image_placeholder.png"
-        # default_texture = safe_load_texture(file)
-        default_texture = DrawTexture(file)
-        # if default_texture := textures.get(file):
-        #     pass
-        # else:
+        default_texture = safe_load_texture(file)
 
         for name in self.workspace_names:
             file = self.thumbnails_dir / f"{name}.png"
             if file.exists():
-                # texture = safe_load_texture(file)
-                texture = DrawTexture(file)
+                texture = safe_load_texture(file)
             else:
                 texture = default_texture
             self.boxes[name].texture = texture
 
         self.handler = DrawHandler(self.draw_px, self.area.spaces.active, args=[context])
         self.area.tag_redraw()
-        print(f"init in {perf_counter() - start:.3f}")
 
         return self.start_modal()
 
@@ -131,19 +126,33 @@ class STRIKE_OT_switch_workspace(BOperator.type):
         box_height = 200
         out_padding = 100
         padding = 10
+        region = next(r for r in self.area.regions if r.type == "WINDOW")
+        maxx = region.width - padding
+        minx = padding
+
+        if context.preferences.system.use_region_overlap:
+            space = self.area.spaces.active
+            if self.area.type == "VIEW_3D":
+                if hasattr(space, "show_region_ui") and space.show_region_ui:
+                    region = next(r for r in self.area.regions if r.type == "UI")
+                    maxx -= region.width
+
+            if hasattr(space, "show_region_toolbar") and space.show_region_toolbar:
+                region = next(r for r in self.area.regions if r.type == "TOOLS")
+                minx += region.width
 
         # Calculate rows
         lines: list[list[WorkspaceBox]] = []
         line = []
-        current_pos = V((padding, 0))
+        current_pos = V((minx, 0))
         for name, box in self.boxes.items():
             ratio = box_height / box.texture.height
             width = box.texture.width * ratio
 
             # If overflowing
-            if current_pos.x + width > self.area.width - padding:
+            if current_pos.x + width > maxx:
                 lines.append(line)
-                current_pos.x = padding
+                current_pos.x = minx
                 current_pos.y -= box_height + padding
                 line = [box]
             else:
@@ -156,10 +165,21 @@ class STRIKE_OT_switch_workspace(BOperator.type):
         if line:
             lines.append(line)
 
+        # fit all in frame
+        maxy = lines[0][0].max.y + padding
+        miny = lines[-1][-1].position.y
+        size = maxy - miny
+
+        region_height = region.height - padding * 2
+        if size > region_height:
+            for box in self.boxes.values():
+                box.scale *= region_height / size
+                box.position.y *= region_height / size
+
         # Center x
         for line in lines:
             box = line[-1]
-            offset = (self.area.width - padding - box.max.x) / 2
+            offset = (maxx - box.max.x) / 2
             for box in line:
                 box.position.x += offset
 
@@ -167,7 +187,7 @@ class STRIKE_OT_switch_workspace(BOperator.type):
         maxy = lines[0][0].max.y + padding
         miny = lines[-1][-1].position.y
         size = maxy - miny
-        y_padding = (self.area.height - size) / 2
+        y_padding = (region.height - size) / 2
         offset = y_padding - miny
         for line in lines:
             for box in line:

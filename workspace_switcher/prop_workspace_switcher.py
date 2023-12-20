@@ -32,7 +32,11 @@ class WorkspaceSettings(BPropertyGroup.type):
         times = self.get_access_times()
         names = list(times.keys())
         names.sort(key=lambda name: times[name], reverse=True)
-        workspaces = [bpy.data.workspaces[n] for n in names]
+        workspaces = []
+        for n in names:
+            workspace = bpy.data.workspaces.get(n)
+            if workspace:
+                workspaces.append(workspace)
         return workspaces
 
 
