@@ -1,11 +1,13 @@
 import bpy
-from .node_editor.operators.op_insert_reroute_and_select import SD_OT_insert_reroute_and_select
 
 from .general.operators.op_play_from_start import SD_OT_play_from_start
 from .general.operators.op_select_collection_objects import (
     SD_OT_select_collection_objects,
 )
 from .node_editor.node_editor_ui import SD_MT_align_menu_pie
+from .node_editor.operators.op_insert_reroute_and_activate import (
+    SD_OT_insert_reroute_and_activate,
+)
 
 addon_keymaps = []
 
@@ -35,12 +37,7 @@ def register():
         alt=True,
         ctrl=True,
     )
-    kmi = km.keymap_items.new(
-        SD_OT_insert_reroute_and_select.bl_idname,
-        type="RIGHTMOUSE",
-        value="PRESS",
-        shift=True
-    )
+    kmi = km.keymap_items.new(SD_OT_insert_reroute_and_activate.bl_idname, type="RIGHTMOUSE", value="PRESS", shift=True)
     kmi = km.keymap_items.new(
         "wm.call_menu_pie",
         type="W",

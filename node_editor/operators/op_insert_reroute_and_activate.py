@@ -5,7 +5,7 @@ from ...btypes import BOperator, ExecContext
 
 
 @BOperator("sd")
-class SD_OT_insert_reroute_and_select(BOperator.type):
+class SD_OT_insert_reroute_and_activate(BOperator.type):
     @classmethod
     def poll(cls, context):
         return bpy.ops.node.add_reroute.poll()
