@@ -25,10 +25,10 @@ class SD_OT_insert_reroute_and_select(BOperator.type):
                 context.space_data.node_tree.nodes.active = selected[-1]
             return self.FINISHED
 
-        if event.type in {"ESC", "RIGHTMOUSE"}:
+        if event.type in {"ESC"}:
             return self.FINISHED
 
-        elif event.type == "LEFTMOUSE" and event.value == "RELEASE":
+        elif event.value == "RELEASE":
             print("FINISHED")
             self.finished = True
             return self.PASS_THROUGH
