@@ -5,7 +5,6 @@ from .general.operators.op_select_collection_objects import (
     SD_OT_select_collection_objects,
 )
 from .node_editor.node_editor_ui import SD_MT_align_menu_pie
-from .workspace_switcher.op_switch_workspace import SD_OT_switch_workspace
 
 addon_keymaps = []
 
@@ -41,21 +40,7 @@ def register():
         value="PRESS",
     )
     kmi.properties.name = SD_MT_align_menu_pie.bl_idname
-    kmi = km.keymap_items.new(
-        SD_OT_switch_workspace.bl_idname,
-        type="TAB",
-        value="PRESS",
-        ctrl=True,
-    )
-    kmi.properties.index = 1
-    kmi = km.keymap_items.new(
-        SD_OT_switch_workspace.bl_idname,
-        type="TAB",
-        value="PRESS",
-        ctrl=True,
-        shift=True,
-    )
-    kmi.properties.index = -1
+    # kmi.properties.index = -1
     addon_keymaps.append(km)
 
 
