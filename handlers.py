@@ -140,10 +140,10 @@ class DrawHandler:
 draw_handlers: list[DrawHandler] = []
 
 
-timers: list[Timer] = []
+app_timers: list[AppTimer] = []
 
 
-class Timer:
+class AppTimer:
     def run(self):
         if not self.finished:
             return self.func()
@@ -152,14 +152,14 @@ class Timer:
         self.finished = False
         self.func = func
         bpy.app.timers.register(self.run, first_interval=first_interval, persistent=persistent)
-        global timers
-        timers.append(self)
+        global app_timers
+        app_timers.append(self)
 
     def remove(self):
         self.finished = True
 
-        global timers
-        timers.remove(self)
+        global app_timers
+        app_timers.remove(self)
 
 
 def unregister():
@@ -172,6 +172,6 @@ def unregister():
     for handler in draw_handlers:
         handler.remove()
 
-    global timers
-    for timer in timers:
+    global app_timers
+    for timer in app_timers:
         timer.remove()

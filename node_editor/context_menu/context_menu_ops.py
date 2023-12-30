@@ -2,6 +2,7 @@ import bpy
 from bpy import types as btypes
 from bpy.props import StringProperty
 
+from ...bhelpers import BNodeTree
 from ...btypes import BOperator
 from ...functions import get_active_node_tree
 
@@ -12,6 +13,7 @@ prop_names = {
     "GeometryNodeInputMaterial": "material",
     "FunctionNodeInputBool": "boolean",
     "FunctionNodeInputColor": "color",
+    "GeometryNodeInputImage": "image",
     # "GeometryNodeObjectInfo": "",
     "FunctionNodeInputString": "string",
 }
@@ -206,7 +208,9 @@ class SD_OT_extract_node_prop_to_group_input(BOperator.type):
         node = context.active_node
         node.label = socket.label if socket.label else socket.name
 
-        node_tree.inputs.new(type(socket).__name__, socket.name)
+        # node_tree.inputs.new(type(socket).__name__, socket.name)
+        # node_tree.interface.inputs
+        node_tree.interface.new_socket(socket_type=type(socket).__name__, name=socket.name)
         node_tree.links.new(node.outputs[-2], socket)
         hide_unused_outputs(node, exclude={-1, -2})
 
@@ -224,6 +228,7 @@ class SD_OT_extract_node_to_group_input(BOperator.type):
         "ShaderNodeValue": "NodeSocketFloat",
         "FunctionNodeInputVector": "NodeSocketVector",
         "GeometryNodeInputMaterial": "NodeSocketMaterial",
+        "GeometryNodeInputImage": "NodeSocketImage",
         "FunctionNodeInputBool": "NodeSocketBool",
         "FunctionNodeInputColor": "NodeSocketColor",
         "FunctionNodeInputString": "NodeSocketString",
@@ -284,7 +289,7 @@ class SD_OT_extract_node_to_group_input(BOperator.type):
         def get_modifier_input_names(m):
             keys = set()
             for k in m.keys():
-                if not k.endswith("_attribute_name") and not k.endswith("_use_attribute") and k.startswith("Input_"):
+                if not k.endswith("_attribute_name") and not k.endswith("_use_attribute") and k.startswith("Socket_"):
                     keys.add(k)
             return keys
 
@@ -293,19 +298,25 @@ class SD_OT_extract_node_to_group_input(BOperator.type):
             inputs[m.name] = get_modifier_input_names(m)
 
         # Add the new group input
-        socket = node_tree.inputs.new(socket_type, socket_name)
+        # socket = node_tree.inputs.new(socket_type, socket_name)
+        # socket = node_tree.interface.new_socket(socket_name, socket_type=socket_type)
+        socket = node_tree.interface.new_socket(socket_name, socket_type="NodeSocketGeometry")
+        socket.from_socket(node, node.outputs[0])
+        socket = node_tree.interface.items_tree[-1]
+        socket_inputs = BNodeTree(node_tree).inputs
         if node.bl_idname == "ShaderNodeValue":
             value = node.outputs[0].default_value
         else:
             value = getattr(node, self.prop_names[node.bl_idname])
         socket.default_value = value
-        node_tree.active_input = len(node_tree.inputs) - 1
+        # node_tree.active_input = len(socket_inputs) - 1
+        node_tree.interface.active = node_tree.interface.items_tree[-1]
 
         # Set all occurences of that property to the default value
         for ng in bpy.data.node_groups:
             for n in ng.nodes:
                 if hasattr(n, "node_tree") and n.node_tree == node_tree:
-                    n.inputs[-1].default_value = value
+                    socket_inputs[-1].default_value = value
                     pass
 
         # Do the same for modifiers if it is geometry nodes
@@ -322,10 +333,13 @@ class SD_OT_extract_node_to_group_input(BOperator.type):
         # Set the min and max values if applicable
         if to_socket and matching:
             rna = to_socket.bl_rna.properties["default_value"]
-            if hasattr(socket, "min_value") and not socket.default_value < rna.soft_min:
-                socket.min_value = rna.soft_min
-            if hasattr(socket, "max_value") and not socket.default_value > rna.soft_min:
-                socket.max_value = rna.soft_max
+            try:
+                if hasattr(socket, "min_value") and not socket.default_value < rna.soft_min:
+                    socket.min_value = rna.soft_min
+                if hasattr(socket, "max_value") and not socket.default_value > rna.soft_min:
+                    socket.max_value = rna.soft_max
+            except TypeError:
+                pass
 
         # Create a new group input node and replace the old node with it
         input_node = node_tree.nodes.new("NodeGroupInput")
@@ -419,7 +433,7 @@ class SD_OT_edit_group_socket_from_node(BOperator.type):
         return True
 
     def invoke(self, context: btypes.Context, event):
-        node_tree = get_active_node_tree(context)
+        node_tree = BNodeTree(get_active_node_tree(context))
         node: btypes.Node = context.active_node
         is_group_input = node.bl_idname == "NodeGroupInput"
         self.is_group_input = is_group_input
@@ -434,7 +448,7 @@ class SD_OT_edit_group_socket_from_node(BOperator.type):
     def draw(self, context):
         layout = self.layout
         layout.label(text="Rename socket:")
-        socket = self.socket
+        socket: btypes.NodeTreeInterfaceSocket = self.socket
         layout.activate_init = True
         layout.prop(socket, "name", text="")
 
@@ -451,12 +465,13 @@ class SD_OT_edit_group_socket_from_node(BOperator.type):
         label_column.label(text="Type")
         property_row = layout_split.row(align=True)
 
-        op = property_row.operator_menu_enum(
-            "node.tree_socket_change_type",
-            "socket_type",
-            text=socket.bl_label if socket.bl_label else socket.bl_idname,
-        )
-        op.in_out = "IN" if self.is_group_input else "OUT"
+        property_row.prop(socket, "socket_type", text="")
+        # op = property_row.operator_menu_enum(
+        #     "node.tree_socket_change_type",
+        #     "socket_type",
+        #     text=socket.name if socket.name else socket.bl_socket_idname,
+        # )
+        # op.in_out = "IN" if self.is_group_input else "OUT"
 
         layout.use_property_split = True
         layout.use_property_decorate = False

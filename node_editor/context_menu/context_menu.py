@@ -1,6 +1,7 @@
 import bpy
 import bpy.types as btypes
 
+from ...bhelpers import BNodeTree
 from ...btypes import BMenu
 from .context_menu_ops import (
     SD_OT_collapse_group_input_nodes as collapse_group_inputs_op,
@@ -22,28 +23,32 @@ from .context_menu_ops import SD_OT_extract_node_to_group_input as extract_node_
 from .context_menu_ops import get_active_node_tree
 
 compatible_with = {
-    "GEOMETRY": {"GEOMETRY"},
-    "STRING": set(),
-    "SHADER": set(),
+    "NodeSocketGeometry": {"NodeSocketGeometry"},
+    "NodeSocketString": set(),
+    "NodeSocketShader": set(),
 }
 
-common_types = {"INT", "VECTOR", "RGBA", "RGB", "BOOLEAN", "VALUE"}
+common_types = {"NodeSocketInt", "NodeSocketVector", "NodeSocketColor", "NodeSocketBool", "NodeSocketFloat"}
 compatible_with |= {k: common_types for k in common_types}
 compatible_with = {k: v | {k} for k, v in compatible_with.items()}
 theme = bpy.context.preferences.themes[0].node_editor
 
 
+def get_base_socket_type(socket: btypes.NodeSocket):
+    return socket.bl_idname.removesuffix(socket.bl_subtype_label)
+
+
 @BMenu(label="Connect to group input")
 class SD_MT_group_input_menu(btypes.Menu):
     def draw(self, context: btypes.Context):
-        ng = get_active_node_tree(context)
+        ng = BNodeTree(get_active_node_tree(context))
         layout: btypes.UILayout = self.layout
         orig_socket: btypes.NodeSocket = context.button_pointer
 
         layout.operator(extract_prop_to_group_input_op.bl_idname, text="New", icon="ADD")
         created = False
         for i, socket in enumerate(ng.inputs):
-            if socket.type in compatible_with[orig_socket.type]:
+            if socket.socket_type in compatible_with[get_base_socket_type(orig_socket)]:
                 row = layout.row(align=True)
                 op = row.operator(connect_to_group_input_op.bl_idname, text=socket.name)
                 op.input_index = i
