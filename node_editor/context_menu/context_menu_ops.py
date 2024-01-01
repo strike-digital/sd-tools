@@ -1,5 +1,5 @@
 import bpy
-from bpy import types as btypes
+import bpy.types as btypes
 from bpy.props import StringProperty
 
 from ...bhelpers import BNodeTree
@@ -17,6 +17,23 @@ prop_names = {
     # "GeometryNodeObjectInfo": "",
     "FunctionNodeInputString": "string",
 }
+
+
+def split_camel_case(string: str):
+    result = []
+    last_upper = 0
+    for i, c in enumerate(string):
+        if c.isupper():
+            result.append(string[last_upper:i])
+            last_upper = i
+    result.append(string[last_upper:])
+    return result
+
+
+def get_base_socket_type(socket: btypes.NodeSocket):
+    """Remove the subtype from a socket idname (e.g. NodeSocketVector from NodeSocketVectorXYZ)"""
+    val = "".join(split_camel_case(socket.bl_idname)[:4])
+    return val
 
 
 def hide_unused_outputs(node, exclude: set = ()):
@@ -210,7 +227,9 @@ class SD_OT_extract_node_prop_to_group_input(BOperator.type):
 
         # node_tree.inputs.new(type(socket).__name__, socket.name)
         # node_tree.interface.inputs
-        node_tree.interface.new_socket(socket_type=type(socket).__name__, name=socket.name)
+        # node_tree.interface.new_socket(socket_type=type(socket).__name__, name=socket.name)
+        node_tree.interface.new_socket(socket_type=get_base_socket_type(socket), name=socket.name)
+
         node_tree.links.new(node.outputs[-2], socket)
         hide_unused_outputs(node, exclude={-1, -2})
 

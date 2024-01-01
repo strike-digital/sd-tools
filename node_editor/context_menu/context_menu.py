@@ -1,6 +1,8 @@
 import bpy
 import bpy.types as btypes
 
+from sd_tools.node_editor.context_menu.context_menu_ops import get_base_socket_type
+
 from ...bhelpers import BNodeTree
 from ...btypes import BMenu
 from .context_menu_ops import (
@@ -32,10 +34,6 @@ common_types = {"NodeSocketInt", "NodeSocketVector", "NodeSocketColor", "NodeSoc
 compatible_with |= {k: common_types for k in common_types}
 compatible_with = {k: v | {k} for k, v in compatible_with.items()}
 theme = bpy.context.preferences.themes[0].node_editor
-
-
-def get_base_socket_type(socket: btypes.NodeSocket):
-    return socket.bl_idname.removesuffix(socket.bl_subtype_label)
 
 
 @BMenu(label="Connect to group input")

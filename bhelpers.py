@@ -1,16 +1,19 @@
-from typing import TYPE_CHECKING, Any, Iterator
+from typing import TYPE_CHECKING, Any, Iterator, MutableMapping, TypeVar
 
 from bpy.types import NodeTree, NodeTreeInterfacePanel, NodeTreeInterfaceSocket
 
+_KT = TypeVar("_KT")
+_VT = TypeVar("_VT")
 
-class BDict(dict):
+
+class BDict(dict, MutableMapping[_KT, _VT]):
     """Used to mimic the behavior of the built in Collection Properties in Blender, which act as a
     mix of dictionaries and lists."""
 
-    def __iter__(self) -> Iterator[Any]:
+    def __iter__(self) -> Iterator[_VT]:
         return iter(self.values())
 
-    def __getitem__(self, __key: Any) -> Any:
+    def __getitem__(self, __key: str | int) -> _VT:
         if isinstance(__key, int):
             return list(self.values())[__key]
         return super().__getitem__(__key)
