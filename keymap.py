@@ -1,5 +1,6 @@
 import bpy
 
+from .copy_nodes.op_copy_nodes import SD_OT_copy_nodes
 from .general.operators.op_play_from_start import SD_OT_play_from_start
 from .general.operators.op_select_collection_objects import (
     SD_OT_select_collection_objects,
@@ -44,6 +45,13 @@ def register():
         value="PRESS",
     )
     kmi.properties.name = SD_MT_align_menu_pie.bl_idname
+    kmi = km.keymap_items.new(
+        SD_OT_copy_nodes.bl_idname,
+        type="C",
+        value="PRESS",
+        ctrl=True,
+        shift=True,
+    )
     # kmi.properties.index = -1
     addon_keymaps.append(km)
 
