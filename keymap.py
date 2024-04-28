@@ -1,68 +1,40 @@
+from typing import TypeVar, Union
+
 import bpy
+from bpy.types import KeyMap, KeyMapItem, KeyMapItems
 
-from .general.operators.op_render_in_new_slot import SD_OT_render_in_new_slot
-
-from .copy_nodes.op_copy_nodes import SD_OT_copy_nodes
-from .general.operators.op_play_from_start import SD_OT_play_from_start
-from .general.operators.op_select_collection_objects import (
-    SD_OT_select_collection_objects,
-)
-from .node_editor.node_editor_ui import SD_MT_align_menu_pie
-from .node_editor.operators.op_insert_reroute_and_activate import (
-    SD_OT_insert_reroute_and_activate,
-)
+from .btypes import BOperatorBase
 
 addon_keymaps = []
+km: KeyMap = None
 
 
-def register():
-    addon = bpy.context.window_manager.keyconfigs.addon
-    km = addon.keymaps.new(name="Window")
-    # insert keymap items here
-    kmi = km.keymap_items.new(SD_OT_play_from_start.bl_idname, type="SPACE", value="PRESS", shift=True)
-    kmi = km.keymap_items.new(
-        SD_OT_select_collection_objects.bl_idname,
-        type="LEFTMOUSE",
-        value="PRESS",
-        alt=True,
-    )
-    kmi = km.keymap_items.new(
-        SD_OT_select_collection_objects.bl_idname,
-        type="LEFTMOUSE",
-        value="PRESS",
-        alt=True,
-        shift=True,
-    )
-    kmi = km.keymap_items.new(
-        SD_OT_select_collection_objects.bl_idname,
-        type="LEFTMOUSE",
-        value="PRESS",
-        alt=True,
-        ctrl=True,
-    )
-    kmi = km.keymap_items.new(SD_OT_insert_reroute_and_activate.bl_idname, type="RIGHTMOUSE", value="PRESS", shift=True)
-    kmi = km.keymap_items.new(
-        "wm.call_menu_pie",
-        type="W",
-        value="PRESS",
-    )
-    kmi.properties.name = SD_MT_align_menu_pie.bl_idname
-    kmi = km.keymap_items.new(
-        SD_OT_copy_nodes.bl_idname,
-        type="C",
-        value="PRESS",
-        ctrl=True,
-        shift=True,
-    )
-    kmi = km.keymap_items.new(
-        SD_OT_render_in_new_slot.bl_idname,
-        type="F12",
-        value="PRESS",
-        # ctrl=True,
-        # shift=True,
-    )
-    # kmi.properties.index = -1
-    addon_keymaps.append(km)
+T = TypeVar("T", bound=BOperatorBase)
+
+
+def register_keymap_item(
+    operator: Union[T, str],
+    key: str,
+    value: str = "PRESS",
+    shift: bool = False,
+    ctrl: bool = False,
+    alt: bool = False,
+    oskey: bool = False,
+) -> Union[T, KeyMapItem]:
+    """Create a new keymap item.
+    Returns the new keymap item properties, which can be used to set the properties that the operator can be called with
+    """
+    global km
+    if not km:
+        addon = bpy.context.window_manager.keyconfigs.addon
+        km = addon.keymaps.new(name="Window")
+    idname = operator if isinstance(operator, str) else operator.bl_idname
+    print(idname)
+
+    keymap_items: KeyMapItems = km.keymap_items
+    kmi = keymap_items.new(idname=idname, type=key, value=value, shift=shift, ctrl=ctrl, alt=alt, oskey=oskey)
+    addon_keymaps.append((km))
+    return kmi.properties
 
 
 def unregister():

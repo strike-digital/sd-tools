@@ -1,6 +1,8 @@
 import bpy
 from bpy.types import Context, Event
 
+from ...keymap import register_keymap_item
+
 from ...btypes import BOperator, ExecContext
 
 
@@ -31,3 +33,6 @@ class SD_OT_insert_reroute_and_activate(BOperator.type):
             return self.PASS_THROUGH
 
         return self.PASS_THROUGH
+
+
+register_keymap_item(SD_OT_insert_reroute_and_activate, key="RIGHTMOUSE", shift=True)

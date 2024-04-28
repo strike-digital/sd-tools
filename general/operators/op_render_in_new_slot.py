@@ -2,6 +2,7 @@ import bpy
 from bpy.types import Context, Image
 
 from ...btypes import BOperator, ExecContext
+from ...keymap import register_keymap_item
 
 
 @BOperator("sd")
@@ -23,3 +24,6 @@ class SD_OT_render_in_new_slot(BOperator.type):
         slots.active = slot
 
         bpy.ops.render.render(ExecContext.INVOKE.value)
+
+
+register_keymap_item(SD_OT_render_in_new_slot, "F12")

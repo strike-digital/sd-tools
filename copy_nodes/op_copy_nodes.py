@@ -1,6 +1,6 @@
-
-
 from bpy.types import Context
+
+from ..keymap import register_keymap_item
 from ..btypes import BOperator
 
 
@@ -17,3 +17,6 @@ class SD_OT_copy_nodes(BOperator.type):
 
     def execute(self, context: Context):
         print(context.selected_nodes)
+
+
+register_keymap_item(SD_OT_copy_nodes, key="C", ctrl=True, shift=True)

@@ -1,6 +1,8 @@
 import bpy
 from bpy.types import Menu, UILayout
 
+from ..keymap import register_keymap_item
+
 from ..btypes import BMenu, BPanel
 from ..settings.prop_window_manager import get_sd_settings
 from .operators.op_align_nodes_axis import SD_OT_align_nodes_axis
@@ -104,3 +106,7 @@ class SD_MT_align_menu_pie(Menu):
         op.x = True
         op = layout.operator(SD_OT_align_nodes_axis.bl_idname, text="Align nodes Y")
         op.x = False
+
+
+properties = register_keymap_item("wm.call_menu_pie", key="W")
+properties.name = SD_MT_align_menu_pie.bl_idname
