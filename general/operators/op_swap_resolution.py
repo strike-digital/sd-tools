@@ -1,4 +1,4 @@
-from bpy.types import Context, RENDER_PT_format, RENDER_PT_format_presets, UILayout
+from bpy.types import Context, RENDER_PT_format_presets, UILayout
 
 from ...btypes import BOperator
 

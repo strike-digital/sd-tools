@@ -1,5 +1,7 @@
 import bpy
 
+from .general.operators.op_render_in_new_slot import SD_OT_render_in_new_slot
+
 from .copy_nodes.op_copy_nodes import SD_OT_copy_nodes
 from .general.operators.op_play_from_start import SD_OT_play_from_start
 from .general.operators.op_select_collection_objects import (
@@ -51,6 +53,13 @@ def register():
         value="PRESS",
         ctrl=True,
         shift=True,
+    )
+    kmi = km.keymap_items.new(
+        SD_OT_render_in_new_slot.bl_idname,
+        type="F12",
+        value="PRESS",
+        # ctrl=True,
+        # shift=True,
     )
     # kmi.properties.index = -1
     addon_keymaps.append(km)
