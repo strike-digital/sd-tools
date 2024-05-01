@@ -15,7 +15,7 @@ bl_info = {
     "name": "SD Tools",
     "author": "Andrew Stevenson",
     "description": "",
-    "blender": (4, 0, 0),
+    "blender": (4, 1, 0),
     "version": (0, 0, 1),
     "location": "",
     "warning": "",
