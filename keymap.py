@@ -29,7 +29,6 @@ def register_keymap_item(
         addon = bpy.context.window_manager.keyconfigs.addon
         km = addon.keymaps.new(name="Window")
     idname = operator if isinstance(operator, str) else operator.bl_idname
-    print(idname)
 
     keymap_items: KeyMapItems = km.keymap_items
     kmi = keymap_items.new(idname=idname, type=key, value=value, shift=shift, ctrl=ctrl, alt=alt, oskey=oskey)

@@ -30,11 +30,23 @@ from mathutils import Vector
 
 """A module containing helpers to make defining blender types easier (panels, operators etc.)"""
 
-__all__ = ["BMenu", "BOperator", "BPanel", "BPropertyGroup", "FunctionToOperator"]
+__all__ = ["BMenu", "BOperator", "BPanel", "BPropertyGroup", "FunctionToOperator", "configure"]
 to_register = []
 T = TypeVar("T")
 
 
+# CONFIG
+class Config:
+    addon_acronym: str = ""
+
+
+def configure(addon_acronym: str = ""):
+    """Configure btypes settings for this addon, should usually be called in the root init file.
+    Make sure it is called before auto_load.init() in order for the configuration to apply before registration."""
+    Config.addon_acronym = addon_acronym
+
+
+# UTILS
 def enum_value(enum_or_value: Enum | T):
     """If value is an enum item, return enum value, else return value"""
     if isinstance(enum_or_value, Enum):
@@ -42,6 +54,7 @@ def enum_value(enum_or_value: Enum | T):
     return enum_or_value
 
 
+# TYPES
 @dataclass
 class BMenu:
     """A decorator for defining blender menus that helps to cut down on boilerplate code,
@@ -507,12 +520,14 @@ class BOperator:
     and adds better functionality for autocomplete.
     To use it, add it as a decorator to the operator class, with whatever arguments you want.
     To get type hinting for it's extra functions, the class should inherit from BOperator.type instead of Operator
-    The only required argument is the category of the operator,
+    The category of the operator is required if the addon acronym has not been set.
     and the rest can be inferred from the class name and __doc__.
     This works best for operators that use the naming convension ADDON_NAME_OT_operator_name.
 
     Args:
         category (str): The first part of the name used to call the operator (e.g. "object" in "object.select_all").
+            This is optional if the addon_acronym property has been configured in the init file,
+            otherwise this will raise a ValueError if no value is given.
         idname (str): The second part of the name used to call the operator (e.g. "select_all" in "object.select_all")
         label (str): The name of the operator that is displayed in the UI.
         description (str): The description of the operator that is displayed in the UI.
@@ -530,7 +545,7 @@ class BOperator:
         macro (bool): Use to check if an operator is a macro.
     """
 
-    category: str
+    category: str = ""
     idname: str = ""
     label: str = ""
     description: str = ""
@@ -555,8 +570,22 @@ class BOperator:
     def __call__(decorator, cls: OperatorClass) -> Union[OperatorClass, BOperatorBase]:
         """This takes the decorated class and populate's the bl_ attributes with either the supplied values,
         or a best guess based on the other values"""
+
+        # Get the first part of the idname
+        if decorator.category:
+            category = decorator.category
+        else:
+            if not Config.addon_acronym:
+                raise ValueError(
+                    f"No category provided for BOperator {cls.__name__}, \
+                    and the addon acronym has not been set with the btypes.configure function in the init file".replace(
+                        "  ", ""
+                    )
+                )
+            category = Config.addon_acronym
+
         cls_name_end = cls.__name__.split("OT_")[-1]
-        idname = f"{decorator.category}." + (decorator.idname or cls_name_end)
+        idname = f"{category}." + (decorator.idname or cls_name_end)
         label = decorator.label or cls_name_end.replace("_", " ").title()
 
         if decorator.description:
