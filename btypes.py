@@ -24,6 +24,8 @@ from bpy.types import (
     Panel,
     PropertyGroup,
     UILayout,
+    Area,
+    NodeTree
 )
 from mathutils import Vector
 
@@ -171,28 +173,29 @@ class BPoll:
         return classmethod(lambda cls, context: not f1(cls, context) and not f2(cls, context))
 
     @classmethod
-    def is_node_editor(cls, context: Context, tree_type=None) -> bool:
+    def poll_node_editor(cls, context: Context, tree_type=None) -> Area:
         if context.area.type != "NODE_EDITOR":
-            return False
+            return None
         if tree_type:
-            return context.space_data.tree_type == tree_type
-        return True
+            return context.area if context.space_data.tree_type == tree_type else None
+        return context.area
 
     @classmethod
-    def is_geometry_node_editor(cls, context: Context) -> bool:
-        return BPoll.is_node_editor(context, tree_type="GeometryNodeTree")
+    def poll_geometry_node_editor(cls, context: Context) -> Area:
+        return BPoll.poll_node_editor(context, tree_type="GeometryNodeTree")
 
     @classmethod
-    def is_shader_node_editor(cls, context: Context) -> bool:
-        return BPoll.is_node_editor(context, tree_type="ShaderNodeTree")
+    def poll_shader_node_editor(cls, context: Context) -> Area:
+        return BPoll.poll_node_editor(context, tree_type="ShaderNodeTree")
 
     @classmethod
-    def is_compositor_node_editor(cls, context: Context) -> bool:
-        return BPoll.is_node_editor(context, tree_type="CompositorNodeTree")
+    def poll_compositor_node_editor(cls, context: Context) -> Area:
+        return BPoll.poll_node_editor(context, tree_type="CompositorNodeTree")
 
     @classmethod
-    def is_active_node_tree(cls, context: Context) -> bool:
-        return BPoll.is_node_editor(context) and bool(context.space_data.node_tree)
+    def poll_active_node_tree(cls, context: Context) -> NodeTree:
+        if BPoll.poll_node_editor(context) and context.space_data.node_tree:
+            return context.space_data.node_tree
 
 
 # TYPES
