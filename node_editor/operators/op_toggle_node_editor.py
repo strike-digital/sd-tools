@@ -4,7 +4,7 @@ from bpy.types import KeyMap
 from ...btypes import BOperator
 
 
-@BOperator("sd")
+@BOperator()
 class SD_OT_toggle_node_editor(BOperator.type):
     """Quickly switch between the geometry and shader node editors"""
 

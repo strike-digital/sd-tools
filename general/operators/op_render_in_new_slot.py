@@ -5,7 +5,7 @@ from ...btypes import BOperator, ExecContext
 from ...keymap import register_keymap_item
 
 
-@BOperator("sd")
+@BOperator()
 class SD_OT_render_in_new_slot(BOperator.type):
     """Render the scene, in a new render slot."""
 

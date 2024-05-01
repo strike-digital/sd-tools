@@ -3,7 +3,7 @@ from bpy.types import Context, RENDER_PT_format_presets, UILayout
 from ...btypes import BOperator
 
 
-@BOperator("sd")
+@BOperator()
 class SD_OT_swap_resolution(BOperator.type):
 
     def execute(self, context: Context):

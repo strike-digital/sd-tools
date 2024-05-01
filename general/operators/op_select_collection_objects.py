@@ -1,11 +1,10 @@
 import bpy
 
+from ...btypes import BOperator
 from ...keymap import register_keymap_item
 
-from ...btypes import BOperator
 
-
-@BOperator("sd")
+@BOperator()
 class SD_OT_select_collection_objects(BOperator.type):
     @classmethod
     def poll(cls, context):

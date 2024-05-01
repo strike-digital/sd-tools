@@ -1,10 +1,10 @@
 from bpy.types import Context
 
-from ..keymap import register_keymap_item
 from ..btypes import BOperator
+from ..keymap import register_keymap_item
 
 
-@BOperator("sd")
+@BOperator()
 class SD_OT_copy_nodes(BOperator.type):
 
     @classmethod

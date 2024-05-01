@@ -6,7 +6,7 @@ from mathutils import Vector
 from ..btypes import BOperator
 
 
-@BOperator("sd")
+@BOperator()
 class SD_OT_dummy_import(Operator):
     asset_id: StringProperty()
 

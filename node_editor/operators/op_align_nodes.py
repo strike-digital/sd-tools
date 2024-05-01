@@ -68,7 +68,7 @@ def organise_input_nodes(node):
         organise_input_nodes(node)
 
 
-@BOperator("sd")
+@BOperator()
 class SD_OT_align_nodes(BOperator.type):
     "Align the nodes in this node tree"
 

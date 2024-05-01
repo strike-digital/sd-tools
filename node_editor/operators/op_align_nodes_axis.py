@@ -6,7 +6,7 @@ from mathutils import Vector
 from ...btypes import BOperator
 
 
-@BOperator("sd")
+@BOperator()
 class SD_OT_align_nodes_axis(BOperator.type):
     x: BoolProperty(default=True)
 

@@ -1,12 +1,11 @@
 import bpy
 from bpy.types import Context, Event
 
+from ...btypes import BOperator, ExecContext
 from ...keymap import register_keymap_item
 
-from ...btypes import BOperator, ExecContext
 
-
-@BOperator("sd")
+@BOperator()
 class SD_OT_insert_reroute_and_activate(BOperator.type):
     @classmethod
     def poll(cls, context):

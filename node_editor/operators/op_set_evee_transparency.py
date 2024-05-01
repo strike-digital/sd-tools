@@ -4,7 +4,7 @@ from bpy.types import Context
 from ...btypes import BOperator
 
 
-@BOperator("sd")
+@BOperator()
 class SD_OT_set_eevee_transparency(BOperator.type):
     @classmethod
     def poll(cls, context):

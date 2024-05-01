@@ -1,12 +1,11 @@
 import bpy
 from bpy.types import Context
 
+from ...btypes import BOperator
 from ...keymap import register_keymap_item
 
-from ...btypes import BOperator
 
-
-@BOperator("sd")
+@BOperator()
 class SD_OT_play_from_start(BOperator.type):
     def execute(self, context: Context):
         context.scene.frame_set(context.scene.frame_start - 1)
