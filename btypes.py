@@ -126,21 +126,21 @@ def _unwrap_method(func: classmethod):
 
 class BPoll:
     """Presets for common poll functions
-    All functions starting with `is_` are poll functions.
+    All functions starting with `poll_` are poll functions.
     Other functions can be used to modify and combine poll functions.
     ```
     class MyOperator:
-        poll = BPoll.is_x
+        poll = BPoll.poll_x
         # or
-        poll = BPoll.both(BPoll.is_x, BPoll.is_y)
+        poll = BPoll.both(BPoll.poll_x, BPoll.poll_y)
         # or
-        poll = BPoll.both(BPoll.inverse(BPoll.is_x), BPoll.is_y)
+        poll = BPoll.both(BPoll.inverse(BPoll.poll_x), BPoll.poll_y)
     ```
 
     Eventually it's probably easier to just write your own poll function,
     but these can still be used as building blocks"""
 
-    def _unwrap_function_args(func):
+    def _unwrap_classmethod_args(func):
         """Convert all provided function arguments that are classmethods into normal functions
         This is needed for the operation functions so they can be called from within eachother.
         It's a stupid amount of complexity for such a simple feature, but it is nice that it works."""
@@ -156,18 +156,18 @@ class BPoll:
 
         return wrapped_func
 
-    @_unwrap_function_args
+    @_unwrap_classmethod_args
     def inverse(f: Callable) -> classmethod:
         """Return the inverse of the provided poll function. Equivalent to the `not` keyword"""
         return classmethod(lambda cls, context: not f(cls, context))
 
-    @_unwrap_function_args
+    @_unwrap_classmethod_args
     def both(f1: Callable, f2: Callable) -> classmethod:
         """Combine two poll functions. Equivalent to the `and` keyword"""
         # return classmethod(lambda cls, context: f1(context) and _unwrap_method(f2)(cls, context))
         return classmethod(lambda cls, context: f1(cls, context) and f2(cls, context))
 
-    @_unwrap_function_args
+    @_unwrap_classmethod_args
     def neither(f1: Callable, f2: Callable) -> classmethod:
         """Return if both poll functions are False. Equivalent to `not f1 and not f2`"""
         return classmethod(lambda cls, context: not f1(cls, context) and not f2(cls, context))
