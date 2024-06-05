@@ -24,11 +24,9 @@ bl_info = {
 }
 
 
-from . import auto_load
-from . import btypes
+from . import auto_load, btypes
 
-
-btypes.configure(addon_acronym="sd")
+btypes.configure(addon_string="sd")
 auto_load.init()
 
 

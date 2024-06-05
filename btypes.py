@@ -15,36 +15,48 @@ from bpy.props import (
 )
 from bpy.types import (
     ID,
+    Area,
     Context,
     Event,
     Material,
     Menu,
+    NodeTree,
     Object,
     Operator,
     Panel,
     PropertyGroup,
     UILayout,
-    Area,
-    NodeTree
+    bpy_prop_collection,
 )
 from mathutils import Vector
 
 """A module containing helpers to make defining blender types easier (panels, operators etc.)"""
 
-__all__ = ["BMenu", "BOperator", "BPanel", "BPropertyGroup", "FunctionToOperator", "CustomProperty", "configure"]
+__all__ = [
+    "BMenu",
+    "BOperator",
+    "BPanel",
+    "BPoll",
+    "BPropertyGroup",
+    "FunctionToOperator",
+    "CustomProperty",
+    "configure",
+]
 to_register = []
 T = TypeVar("T")
 
 
 # CONFIG
 class Config:
-    addon_acronym: str = ""
+    addon_string: str = ""
 
 
-def configure(addon_acronym: str = ""):
+def configure(addon_string: str = ""):
     """Configure btypes settings for this addon, should usually be called in the root init file.
-    Make sure it is called before auto_load.init() in order for the configuration to apply before registration."""
-    Config.addon_acronym = addon_acronym
+    Make sure it is called before auto_load.init() in order for the configuration to apply before registration.
+
+    addon_string: The name of the addon. Used to set the subpath of operators e.g. `bpy.ops.addon_string.op`"""
+    Config.addon_string = addon_string
 
 
 # UTILS
@@ -101,12 +113,15 @@ class Cursor(Enum):
         bpy.context.window.cursor_warp(location[0], location[1])
 
 
-class ExecContext(Enum):
+class ExecContext:
     """Operator execution contexts"""
 
     INVOKE = "INVOKE_DEFAULT"
+    "Emulate an operator being clicked on by the user (executes the invoke function)."
     EXEC = "EXECUTE_DEFAULT"
+    "The default execution context, only runs the execute function."
 
+    "Tbh I have no idea what these ones do."
     INVOKE_SCREEN = "INVOKE_SCREEN"
     INVOKE_AREA = "INVOKE_AREA"
     INVOKE_REGION_PREVIEW = "INVOKE_REGION_PREVIEW"
@@ -142,7 +157,7 @@ class BPoll:
 
     def _unwrap_classmethod_args(func):
         """Convert all provided function arguments that are classmethods into normal functions
-        This is needed for the operation functions so they can be called from within eachother.
+        This is needed for the operation functions so they can be called from within each other.
         It's a stupid amount of complexity for such a simple feature, but it is nice that it works."""
 
         @wraps(func)
@@ -171,6 +186,10 @@ class BPoll:
     def neither(f1: Callable, f2: Callable) -> classmethod:
         """Return if both poll functions are False. Equivalent to `not f1 and not f2`"""
         return classmethod(lambda cls, context: not f1(cls, context) and not f2(cls, context))
+
+    @classmethod
+    def poll_file_saved(cls, context: Context) -> bool:
+        return bpy.data.is_saved
 
     @classmethod
     def poll_node_editor(cls, context: Context, tree_type=None) -> Area:
@@ -206,7 +225,7 @@ class BMenu:
     and adds better functionality for autocomplete.
     To use it, add it as a decorator to the menu class, with whatever arguments you want.
     all of the arguments are optional, as they can all be inferred from the class name and __doc__.
-    This works best for menus that use the naming convension ADDON_NAME_MT_menu_name.
+    This works best for menus that use the naming convention ADDON_NAME_MT_menu_name.
 
     ```
     @BMenu()
@@ -240,6 +259,7 @@ class BMenu:
         else:
             panel_description = label
 
+        @wraps(cls, updated=())
         class Wrapped(cls, Menu):
             bl_idname = idname
             bl_label = label
@@ -265,12 +285,12 @@ class BPanel:
     To use it, add it as a decorator to the panel class, with whatever arguments you want.
     The only required arguments are the space and region types,
     and the rest can be inferred from the class name and __doc__.
-    This works best for panels that use the naming convension ADDON_NAME_PT_panel_name.
+    This works best for panels that use the naming convention ADDON_NAME_PT_panel_name.
 
     Simplest example:
     ```
     @BPanel("VIEW_3D")
-    class ADDON_MT_my_panel(BPanel.type):
+    class ADDON_PT_my_panel(BPanel.type):
         pass
     ```
 
@@ -281,9 +301,9 @@ class BPanel:
         label (str): The name of the panel that is displayed in the header (if no header draw function is supplied).
         description (str): The description of the panel that is displayed in the UI.
         idname (str): a custom identifier for this panel. By default it is the name of the panel class.
-        parent (str): if provided, this panel will be a subpanel of the given panel bl_idname.
+        parent (str): if provided, this panel will be a sub-panel of the given panel bl_idname.
         index (int): if set, this panel will be drawn at that index in the list
-            (panels with lower indeces will be drawn higher).
+            (panels with lower indices will be drawn higher).
         context (str): The mode to show this panel in. find them here: https://blender.stackexchange.com/a/73154/57981
         popover_width (int): The width of this panel when it is drawn in a popover in UI units (16px x UI scale).
         show_header (bool): Whether to draw the header of this panel.
@@ -341,7 +361,7 @@ class BPanel:
     default_closed: bool = False
     header_button_expand: bool = False
 
-    type = Menu
+    type = Panel
 
     def __call__(self, cls):
         """This takes the decorated class and populate's the bl_ attributes with either the supplied values,
@@ -369,6 +389,7 @@ class BPanel:
         if hasattr(cls, "bl_options"):
             options = options.union(cls.bl_options)
 
+        @wraps(cls, updated=())
         class Wrapped(cls, Panel):
             bl_idname = idname
             bl_label = label
@@ -398,13 +419,50 @@ class BPanel:
         return Wrapped
 
 
-property_groups = []
-
 PropertyGroupClass = TypeVar("PropertyGroupClass", bound=PropertyGroup)
 
 
 class BPropertyGroupBase(PropertyGroup):
-    pass
+
+    @property
+    def parent(self):
+        """Get the parent instance of this property group"""
+        parts = self.path_from_id().split(".")[:-1]
+        parent = self.id_data
+        for part in parts:
+            # Special case for collections that require indices to access
+            if "[" in part:
+                subparts = part.split("[")
+                index = subparts[1][:-1]
+                if index.replace("-", "").isdigit():
+                    index = int(index)
+                elif index.startswith("\"") or index.startswith("'"):
+                    index = index[1:-1]
+                parent = getattr(parent, subparts[0])[index]
+                continue
+            parent = getattr(parent, part)
+        return parent
+
+    def copy_settings_to(self, other: PropertyGroup, recursive=False):
+        for name in self.keys():
+            attr = getattr(self, name)
+
+            # Special case for collection properties
+            if issubclass(type(attr), bpy_prop_collection):
+                if not recursive:
+                    continue
+                other_collection = getattr(other, name)
+                for item in attr:
+                    other_item = other_collection.add()
+                    BPropertyGroupBase.copy_settings_to(item, other_item, recursive=recursive)
+                continue
+
+            # Copy attribute
+            try:
+                setattr(other, name, getattr(self, name))
+            except AttributeError as e:
+                print(e)
+                pass
 
 
 class BPropertyGroup:
@@ -419,21 +477,25 @@ class BPropertyGroup:
         global property_groups
         property_groups.append(self)
 
+        @wraps(cls, updated=())
         class Wrapped(cls, BPropertyGroupBase):
             pass
 
         self.wrapped_cls = Wrapped
         return self.wrapped_cls
 
-    def register(self):
+    def _register(self):
         try:
             bpy.utils.register_class(self.wrapped_cls)
         except ValueError:
             pass
         setattr(self.id_type, self.name, PointerProperty(type=self.wrapped_cls))
 
-    def unregister(self):
+    def _unregister(self):
         delattr(self.id_type, self.name)
+
+
+property_groups: list[BPropertyGroup] = []
 
 
 @dataclass
@@ -470,6 +532,7 @@ class BOperatorBase(Operator):
 
     layout: UILayout
     event: Event
+    poll_message: str = ""
 
     cursor = Cursor
     __no_reg__ = True
@@ -514,7 +577,6 @@ class BOperatorBase(Operator):
 
         # Execute
         if exec_context:
-            exec_context = enum_value(exec_context)
             return op(exec_context, **kwargs)
         else:
             return op(**kwargs)
@@ -523,8 +585,8 @@ class BOperatorBase(Operator):
     def draw_button(
         cls: OperatorClass,
         layout: UILayout,
-        text: str = "",
-        icon: str = "NONE",
+        text=None,
+        icon="NONE",
         emboss=True,
         depress=False,
         icon_value=0,
@@ -535,10 +597,10 @@ class BOperatorBase(Operator):
     ) -> OperatorClass:
         """Draw this operator as a button in a provided layout.
         All extra keyword arguments are set as arguments for the operator."""
-        layout.operator_context = enum_value(exec_context)
+        layout.operator_context = exec_context
         op = layout.operator(
             cls.bl_idname,
-            text=text,
+            text=text if isinstance(text, str) else cls.bl_label,
             icon=icon,
             icon_value=icon_value,
             emboss=emboss,
@@ -592,6 +654,19 @@ class BOperatorBase(Operator):
 
         self._has_set_custom_args = True
 
+    @classmethod
+    def poll(cls, context: Context):
+        """Wrap the poll function to automate the setting of poll messages."""
+        if hasattr(super(), "poll"):
+            retval = super().poll(context)
+            if not retval and cls.poll_message:
+                # This should be a function so as to avoid unnecessary evaluation,
+                # But also because it being a string causes the Blender VSCode extension
+                # to freeze up, for some extremely clear reason.
+                cls.poll_message_set(lambda: cls.poll_message)
+            return retval
+        return True
+
     def invoke(self, context: Context, event: Event):
         """Wrap the invoke function so we can set some initial attributes"""
         self._set_custom_args()
@@ -634,7 +709,7 @@ class BOperator:
     To get type hinting for it's extra functions, the class should inherit from BOperator.type instead of Operator
     The category of the operator is required if the addon acronym has not been set.
     and the rest can be inferred from the class name and __doc__.
-    This works best for operators that use the naming convension ADDON_NAME_OT_operator_name.
+    This works best for operators that use the naming convention ADDON_NAME_OT_operator_name.
 
     ```
     # Minimal example
@@ -646,7 +721,7 @@ class BOperator:
 
     Args:
         category (str): The first part of the name used to call the operator (e.g. "object" in "object.select_all").
-            This is optional if the addon_acronym property has been configured in the init file,
+            This is optional if the addon_string property has been configured in the init file,
             otherwise this will raise a ValueError if no value is given.
         idname (str): The second part of the name used to call the operator (e.g. "select_all" in "object.select_all")
         label (str): The name of the operator that is displayed in the UI.
@@ -695,14 +770,14 @@ class BOperator:
         if decorator.category:
             category = decorator.category
         else:
-            if not Config.addon_acronym:
+            if not Config.addon_string:
                 raise ValueError(
                     f"No category provided for BOperator {cls.__name__}, \
                     and the addon acronym has not been set with the btypes.configure function in the init file".replace(
                         "  ", ""
                     )
                 )
-            category = Config.addon_acronym
+            category = Config.addon_string
 
         cls_name_end = cls.__name__.split("OT_")[-1]
         idname = f"{category}." + (decorator.idname or cls_name_end)
@@ -732,6 +807,7 @@ class BOperator:
         if hasattr(cls, "bl_options"):
             options = options.union(cls.bl_options)
 
+        @wraps(cls, updated=(), assigned=("__module__", "__name__", "__qualname__", "__doc__", "__type_params__"))
         class Wrapped(BOperatorBase, cls, Operator):
             bl_idname = idname
             bl_label = label
@@ -854,11 +930,11 @@ def register():
 
     # property_groups.sort(key=get_depth, reverse=True)
     for pgroup in property_groups:
-        pgroup.register()
+        pgroup._register()
 
 
 def unregister():
     for op in to_register:
         bpy.utils.unregister_class(op)
     for pgroup in property_groups:
-        pgroup.unregister()
+        pgroup._unregister()

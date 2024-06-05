@@ -75,7 +75,7 @@ class SD_OT_align_nodes(BOperator.type):
     @classmethod
     def poll(self, context):
         if not hasattr(context.space_data, "node_tree"):
-            return True
+            return False
         nt = context.space_data.node_tree
         return bool(nt)
 

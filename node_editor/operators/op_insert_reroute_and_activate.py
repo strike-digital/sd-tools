@@ -14,7 +14,7 @@ class SD_OT_insert_reroute_and_activate(BOperator.type):
     def invoke(self, context: Context, event: Event):
         self.selected_nodes = context.selected_nodes
         self.finished = False
-        bpy.ops.node.add_reroute(ExecContext.INVOKE.value)
+        bpy.ops.node.add_reroute(ExecContext.INVOKE)
         return self.start_modal()
 
     def modal(self, context: Context, event: Event):

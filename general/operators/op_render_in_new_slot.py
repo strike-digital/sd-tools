@@ -23,7 +23,7 @@ class SD_OT_render_in_new_slot(BOperator.type):
 
         slots.active = slot
 
-        bpy.ops.render.render(ExecContext.INVOKE.value)
+        bpy.ops.render.render(ExecContext.INVOKE)
 
 
 register_keymap_item(SD_OT_render_in_new_slot, "F12")
