@@ -1,7 +1,8 @@
-from bpy.props import BoolProperty
+from bpy.props import BoolProperty, StringProperty
 from bpy.types import Context, Event, Node, UILayout
 
-from ...btypes import BOperator, BPoll
+from ...btypes import BOperator, BPoll, ExecContext
+from ...general.operators.op_close_popup import SD_OT_close_popup
 from ...keymap import register_keymap_item
 
 
@@ -12,6 +13,15 @@ class SD_OT_node_rename_extended(BOperator.type):
     show_properties: BoolProperty(default=True)
     show_group: BoolProperty(default=True)
 
+    def label_update(self, context: Context):
+        node = context.space_data.edit_tree.nodes.active
+        if node.label != self.node_label:
+            SD_OT_close_popup.run(ExecContext.INVOKE)
+        node.label = self.node_label
+        pass
+
+    node_label: StringProperty(update=label_update)
+
     @classmethod
     def poll(cls, context: Context):
         if not BPoll.poll_active_node_tree(context):
@@ -21,6 +31,8 @@ class SD_OT_node_rename_extended(BOperator.type):
         return bool(node)
 
     def invoke(self, context: Context, event: Event):
+        self.node = context.space_data.edit_tree.nodes.active
+        self.node_label = self.node.label
         return self.call_popup()
 
     def draw_header(self, layout: UILayout, show_name: str, label: str):
@@ -49,7 +61,8 @@ class SD_OT_node_rename_extended(BOperator.type):
         layout.separator(factor=0.6)
 
         layout.activate_init = True
-        layout.prop(node, "label", text="", icon="NODE", placeholder="Node Label")
+        # layout.prop(node, "label", text="", icon="NODE", placeholder="Node Label")
+        layout.prop(self, "node_label", text="", icon="NODE", placeholder="Node Label")
 
         layout.separator(factor=2.2)
         box = layout.box()

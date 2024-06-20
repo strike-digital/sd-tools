@@ -31,7 +31,6 @@ class SD_OT_extrude_reroute(BOperator.type):
             to_node.location = from_node.location
             node_tree.links.new(from_node.outputs[0], to_node.inputs[0])
             nodes.active = to_node
-            # to_node.active = True
 
         bpy.ops.transform.translate(ExecContext.INVOKE, view2d_edge_pan=True)
 
