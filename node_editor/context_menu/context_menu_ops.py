@@ -5,6 +5,7 @@ from bpy.props import StringProperty
 from ...bhelpers import BNodeTree
 from ...btypes import BOperator
 from ...functions import get_active_node_tree
+from ...keymap import register_keymap_item
 
 prop_names = {
     "FunctionNodeInputInt": "integer",
@@ -42,8 +43,7 @@ def hide_unused_outputs(node, exclude: set = ()):
     exclude = {outputs[i] for i in exclude} or set()
     for i, output in enumerate(outputs):
         if exclude:
-            if outputs[i] not in exclude:
-                output.hide = True
+            output.hide = outputs[i] not in exclude
         else:
             if not output.links:
                 output.hide = True
@@ -200,7 +200,7 @@ class SD_OT_extract_node_prop_to_group_input(BOperator.type):
             return False
 
         node_tree = get_active_node_tree(context)
-        if not node_tree or node_tree.type != "GEOMETRY":
+        if not node_tree:
             return False
 
         socket = context.button_pointer
@@ -228,14 +228,16 @@ class SD_OT_extract_node_prop_to_group_input(BOperator.type):
         # node_tree.inputs.new(type(socket).__name__, socket.name)
         # node_tree.interface.inputs
         # node_tree.interface.new_socket(socket_type=type(socket).__name__, name=socket.name)
-        node_tree.interface.new_socket(socket_type=get_base_socket_type(socket), name=socket.name)
 
-        node_tree.links.new(node.outputs[-2], socket)
-        hide_unused_outputs(node, exclude={-1, -2})
+        new_socket = node_tree.interface.new_socket(socket_type=get_base_socket_type(socket), name=socket.name)
+        new_socket.from_socket(orig_node, socket)
+
+        node_tree.links.new(node.outputs[new_socket.name], socket)
+        hide_unused_outputs(node, exclude={-1, new_socket.name})
 
         for node in node_tree.nodes:
             if node.bl_idname == "NodeGroupInput":
-                node.outputs[-2].hide = True
+                node.outputs[new_socket.name].hide = True
 
 
 @BOperator("sd", label="Extract to group input", undo=True)
@@ -319,9 +321,10 @@ class SD_OT_extract_node_to_group_input(BOperator.type):
         # Add the new group input
         # socket = node_tree.inputs.new(socket_type, socket_name)
         # socket = node_tree.interface.new_socket(socket_name, socket_type=socket_type)
-        socket = node_tree.interface.new_socket(socket_name, socket_type="NodeSocketGeometry")
+        socket = node_tree.interface.new_socket(socket_name, socket_type="NodeSocketVector")
         socket.from_socket(node, node.outputs[0])
-        socket = node_tree.interface.items_tree[-1]
+        socket = node_tree.interface.items_tree[node.label]
+        print(socket.name)
         socket_inputs = BNodeTree(node_tree).inputs
         if node.bl_idname == "ShaderNodeValue":
             value = node.outputs[0].default_value
@@ -329,9 +332,9 @@ class SD_OT_extract_node_to_group_input(BOperator.type):
             value = getattr(node, self.prop_names[node.bl_idname])
         socket.default_value = value
         # node_tree.active_input = len(socket_inputs) - 1
-        node_tree.interface.active = node_tree.interface.items_tree[-1]
+        node_tree.interface.active = socket
 
-        # Set all occurences of that property to the default value
+        # Set all occurrences of that property to the default value
         for ng in bpy.data.node_groups:
             for n in ng.nodes:
                 if hasattr(n, "node_tree") and n.node_tree == node_tree:
@@ -364,8 +367,9 @@ class SD_OT_extract_node_to_group_input(BOperator.type):
         input_node = node_tree.nodes.new("NodeGroupInput")
         input_node.label = socket_name
         input_node.location = node.location
-        for output in input_node.outputs[:-2]:
-            output.hide = True
+        for output in input_node.outputs[:-1]:
+            if output.name != socket_name:
+                output.hide = True
 
         # Hide the newly created socket from other input nodes
         for n in node_tree.nodes:
@@ -379,7 +383,7 @@ class SD_OT_extract_node_to_group_input(BOperator.type):
         # Relink the new group input node
         if to_socket:
             for socket in to_sockets:
-                node_tree.links.new(input_node.outputs[-2], socket)
+                node_tree.links.new(input_node.outputs[socket_name], socket)
         node_tree.nodes.active = input_node
         node_tree.nodes.remove(node)
 
@@ -536,6 +540,12 @@ class SD_OT_collapse_group_input_nodes(BOperator.type):
 
     def execute(self, context):
         node_tree = get_active_node_tree(context)
-        for node in node_tree.nodes:
+        selected_nodes = [n for n in context.selected_nodes if n.type == "GROUP_INPUT"]
+        nodes = selected_nodes or node_tree.nodes
+
+        for node in nodes:
             if node.bl_idname == "NodeGroupInput":
                 hide_unused_outputs(node, exclude={-1})
+
+
+register_keymap_item(SD_OT_collapse_group_input_nodes, key="H", alt=True)
