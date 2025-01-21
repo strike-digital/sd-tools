@@ -6,7 +6,7 @@ from bpy.types import KeyMap, KeyMapItem, KeyMapItems
 from .btypes import BOperatorBase
 
 addon_keymaps = []
-km: KeyMap = None
+keymaps: dict[str, KeyMap] = {}
 
 
 T = TypeVar("T", bound=BOperatorBase)
@@ -20,14 +20,18 @@ def register_keymap_item(
     ctrl: bool = False,
     alt: bool = False,
     oskey: bool = False,
+    keymap_context: str = "Window",
 ) -> Union[T, KeyMapItem]:
     """Create a new keymap item.
     Returns the new keymap item properties, which can be used to set the properties that the operator can be called with
     """
-    global km
+    global keymaps
+    km = keymaps.get(keymap_context)
+
+    # global km
     if not km:
         addon = bpy.context.window_manager.keyconfigs.addon
-        km = addon.keymaps.new(name="Window")
+        km = addon.keymaps.new(name=keymap_context)
     idname = operator if isinstance(operator, str) else operator.bl_idname
 
     keymap_items: KeyMapItems = km.keymap_items
