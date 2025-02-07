@@ -12,7 +12,6 @@ from bpy.types import (
 )
 
 from ...btypes import BOperator
-from .msg_color_change import get_main_color_node
 
 
 class DummyNode:
@@ -61,7 +60,7 @@ class SD_OT_auto_update_material_color(BOperator.type):
         for mat in bpy.data.materials:
             if not mat.node_tree:
                 continue
-            node = get_main_color_node(mat.node_tree)
+            node = self.get_main_color_node(mat.node_tree)
             mat.diffuse_color = node.inputs[0].default_value
 
 
