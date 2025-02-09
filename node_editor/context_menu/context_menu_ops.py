@@ -1,6 +1,9 @@
+from typing import Any
+
 import bpy
 import bpy.types as btypes
 from bpy.props import StringProperty
+from bpy.types import NodeTree
 
 from ...bhelpers import BNodeTree
 from ...btypes import BOperator
@@ -47,6 +50,42 @@ def hide_unused_outputs(node, exclude: set = ()):
         else:
             if not output.links:
                 output.hide = True
+
+
+def get_modifier_input_names(m):
+    keys = set()
+    for k in m.keys():
+        if not k.endswith("_attribute_name") and not k.endswith("_use_attribute") and k.startswith("Socket_"):
+            keys.add(k)
+    return keys
+
+
+def get_modifier_inputs_dict(node_tree: NodeTree):
+    # Create a dictionary containing the keys of all inputs in geo nodes modifiers for the current node tree
+    # I really wish the devs would implement a sane system for interacting with geo nodes modifiers from the api
+    # It would probably add a few more years on to the end of my life that have been stolen by the current system.
+    modifiers = [
+        m for obj in bpy.data.objects for m in obj.modifiers if m.type == "NODES" and m.node_group == node_tree
+    ]
+
+    inputs = {}
+    for m in modifiers:
+        inputs[m.name] = get_modifier_input_names(m)
+    return inputs
+
+
+def update_modifier_input_value(node_tree: NodeTree, inputs_dict: dict, value: Any):
+    """Update the value of a new input in a geometry nodes modifier.
+    Needs a previous inputs_dict created by `get_modifier_inputs_dict` to be able to find the new input."""
+    if node_tree.type == "GEOMETRY":
+        for obj in bpy.data.objects:
+            for modifier in obj.modifiers:
+                if modifier.type == "NODES" and modifier.node_group == node_tree:
+                    # find the new key and change that property
+                    keys = get_modifier_input_names(modifier)
+                    keys.difference_update(inputs_dict[modifier.name])
+                    new_key = list(keys)[0]
+                    modifier[new_key] = value
 
 
 @BOperator("sd", label="Extract to node", undo=True)
@@ -192,7 +231,7 @@ class SD_OT_extract_node_prop_to_named_attr(BOperator.type):
 
 @BOperator("sd", label="Extract to new group input", undo=True)
 class SD_OT_extract_node_prop_to_group_input(BOperator.type):
-    """Extract this property as an input paramater for this node group"""
+    """Extract this property as an input parameter for this node group"""
 
     @classmethod
     def poll(cls, context):
@@ -228,9 +267,12 @@ class SD_OT_extract_node_prop_to_group_input(BOperator.type):
         # node_tree.inputs.new(type(socket).__name__, socket.name)
         # node_tree.interface.inputs
         # node_tree.interface.new_socket(socket_type=type(socket).__name__, name=socket.name)
+        modifier_inputs = get_modifier_inputs_dict(node_tree)
 
         new_socket = node_tree.interface.new_socket(socket_type=get_base_socket_type(socket), name=socket.name)
         new_socket.from_socket(orig_node, socket)
+
+        update_modifier_input_value(node_tree, modifier_inputs, socket.default_value)
 
         node_tree.links.new(node.outputs[new_socket.name], socket)
         hide_unused_outputs(node, exclude={-1, new_socket.name})
@@ -300,23 +342,7 @@ class SD_OT_extract_node_to_group_input(BOperator.type):
                 if self.with_subtype:
                     socket_type = to_socket.bl_idname
 
-        # Create a dictionary containing the keys of all inputs in geo nodes modifiers for the current node tree
-        # I really wish the devs would implement a sane system for interacting with geo nodes modifiers from the api
-        # It would probably add a few more years on to the end of my life that have been stolen by the current system.
-        modifiers = [
-            m for obj in bpy.data.objects for m in obj.modifiers if m.type == "NODES" and m.node_group == node_tree
-        ]
-
-        def get_modifier_input_names(m):
-            keys = set()
-            for k in m.keys():
-                if not k.endswith("_attribute_name") and not k.endswith("_use_attribute") and k.startswith("Socket_"):
-                    keys.add(k)
-            return keys
-
-        inputs = {}
-        for m in modifiers:
-            inputs[m.name] = get_modifier_input_names(m)
+        modifier_inputs = get_modifier_inputs_dict(node_tree)
 
         # Add the new group input
         # socket = node_tree.inputs.new(socket_type, socket_name)
@@ -342,15 +368,7 @@ class SD_OT_extract_node_to_group_input(BOperator.type):
                     pass
 
         # Do the same for modifiers if it is geometry nodes
-        if node_tree.type == "GEOMETRY":
-            for obj in bpy.data.objects:
-                for modifier in obj.modifiers:
-                    if modifier.type == "NODES" and modifier.node_group == node_tree:
-                        # find the new key and change that property
-                        keys = get_modifier_input_names(modifier)
-                        keys.difference_update(inputs[modifier.name])
-                        new_key = list(keys)[0]
-                        modifier[new_key] = value
+        update_modifier_input_value(node_tree, modifier_inputs, value)
 
         # Set the min and max values if applicable
         if to_socket and matching:
