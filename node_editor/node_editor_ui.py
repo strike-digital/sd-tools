@@ -1,21 +1,24 @@
 import bpy
-from bpy.types import Menu, UILayout
-
-from ..keymap import register_keymap_item
+from bpy.types import Menu, NodeSocket, UILayout
 
 from ..btypes import BMenu, BPanel
+from ..keymap import register_keymap_item
 from ..settings.prop_window_manager import get_sd_settings
 from .operators.op_align_nodes_axis import SD_OT_align_nodes_axis
 
 
 class SD_UL_inputs(bpy.types.UIList):
-    def draw_item(self, context, layout, data, item, icon, active_data, active_propname):
+    def draw_item(self, context, layout, data, socket: NodeSocket, icon, active_data, active_propname):
         layout: UILayout = layout
-        layout.prop(item, "name", text="", emboss=False)
         row = layout.row(align=True)
-        row.alignment = "RIGHT"
-        idx = str(list(data.inputs).index(item))
-        row.label(text=f"{idx}")
+        row.use_property_decorate = False
+        row.prop(socket, "hide", text="", icon="HIDE_ON" if socket.hide else "HIDE_OFF", emboss=False)
+        row.separator(factor=0.4)
+        row.prop(socket, "name", text="", emboss=False)
+        sub_row = row.row(align=True)
+        sub_row.alignment = "RIGHT"
+        idx = str(list(data.inputs).index(socket))
+        sub_row.label(text=f"{idx}")
 
 
 @BPanel(space_type="NODE_EDITOR", region_type="UI", label="Info", parent="NODE_PT_active_node_generic")
