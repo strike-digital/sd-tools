@@ -1,10 +1,8 @@
 import bpy
-from bpy.types import Menu, NodeSocket, UILayout
+from bpy.types import NodeSocket, UILayout
 
-from ..btypes import BMenu, BPanel
-from ..keymap import register_keymap_item
+from ..btypes import BPanel
 from ..settings.prop_window_manager import get_sd_settings
-from .operators.op_align_nodes_axis import SD_OT_align_nodes_axis
 
 
 class SD_UL_inputs(bpy.types.UIList):
@@ -93,23 +91,3 @@ class SD_PT_node_panel(bpy.types.Panel):
             box.prop(socket, "hide", text="Hide")
             box.prop(socket, "hide_value", text="Hide value")
             box.prop(socket, "is_linked")
-
-
-@BMenu()
-class SD_MT_align_menu_pie(Menu):
-    @classmethod
-    def poll(cls, context):
-        if not context.space_data or context.area.type != "NODE_EDITOR":
-            return False
-        return True
-
-    def draw(self, context):
-        layout = self.layout.menu_pie()
-        op = layout.operator(SD_OT_align_nodes_axis.bl_idname, text="Align nodes X")
-        op.x = True
-        op = layout.operator(SD_OT_align_nodes_axis.bl_idname, text="Align nodes Y")
-        op.x = False
-
-
-properties = register_keymap_item("wm.call_menu_pie", key="W")
-properties.name = SD_MT_align_menu_pie.bl_idname
