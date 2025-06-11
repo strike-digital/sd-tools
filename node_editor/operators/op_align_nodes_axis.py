@@ -95,5 +95,5 @@ class SD_MT_align_menu_pie(Menu):
         op.x = False
 
 
-properties = register_keymap_item("wm.call_menu_pie", key="W", alt=True)
+properties = register_keymap_item("wm.call_menu_pie", key="Q", alt=True)
 properties.name = SD_MT_align_menu_pie.bl_idname
