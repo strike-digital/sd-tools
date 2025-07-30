@@ -284,7 +284,7 @@ class SD_OT_extract_node_prop_to_group_input(BOperator.type):
 
 @BOperator("sd", label="Extract to group input", undo=True)
 class SD_OT_extract_node_to_group_input(BOperator.type):
-    """Extract this node as an input paramater for this node group"""
+    """Extract this node as an input parameter for this node group"""
 
     types = {
         "FunctionNodeInputInt": "NodeSocketInt",
@@ -328,6 +328,7 @@ class SD_OT_extract_node_to_group_input(BOperator.type):
         socket_name = node.label if node.label else node.name
         to_socket = []
         socket_type = self.types[node.bl_idname]
+        node_type = getattr(bpy.types, node.bl_idname)
         matching = False
 
         # Get information from the socket the node is connected to rather than the node
@@ -349,7 +350,8 @@ class SD_OT_extract_node_to_group_input(BOperator.type):
         # socket = node_tree.interface.new_socket(socket_name, socket_type=socket_type)
         socket = node_tree.interface.new_socket(socket_name, socket_type="NodeSocketVector")
         socket.from_socket(node, node.outputs[0])
-        socket = node_tree.interface.items_tree[node.label]
+        socket = node_tree.interface.items_tree[node_type.bl_rna.name]
+
         print(socket.name)
         socket_inputs = BNodeTree(node_tree).inputs
         if node.bl_idname == "ShaderNodeValue":
