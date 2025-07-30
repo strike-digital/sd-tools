@@ -60,9 +60,9 @@ class SD_OT_space_nodes(BOperator.type):
             position = V(nodes[0].location + nodes[0].dimensions)
         for node in nodes[1:]:
             if self.reverse:
-                position -= node.dimensions + V((20, 20))
+                position -= node.dimensions + V((10, 10))
             else:
-                position += V((20, 20))
+                position += V((10, 10))
 
             position = snap_to_grid(position)
 
