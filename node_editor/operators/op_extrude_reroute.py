@@ -1,5 +1,5 @@
 import bpy
-from bpy.types import NodeTree
+from ...functions import get_active_node_tree
 
 from ...btypes import BOperator, ExecContext
 from ...keymap import register_keymap_item
@@ -12,7 +12,7 @@ class SD_OT_extrude_reroute(BOperator.type):
     def poll(self, context):
         if not hasattr(context.space_data, "node_tree"):
             return False
-        nt = context.space_data.node_tree
+        nt = get_active_node_tree(context)
         if not nt:
             return False
         nodes = [n for n in nt.nodes if n.select and n.type == "REROUTE"]
@@ -21,7 +21,8 @@ class SD_OT_extrude_reroute(BOperator.type):
         return True
 
     def execute(self, context):
-        node_tree: NodeTree = context.space_data.node_tree
+        node_tree = get_active_node_tree(context)
+        # node_tree: NodeTree = context.space_data.node_tree
         nodes = node_tree.nodes
 
         reroutes = [n for n in node_tree.nodes if n.select and n.type == "REROUTE"]

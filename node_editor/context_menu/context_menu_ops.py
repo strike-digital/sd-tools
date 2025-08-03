@@ -349,8 +349,10 @@ class SD_OT_extract_node_to_group_input(BOperator.type):
         # socket = node_tree.inputs.new(socket_type, socket_name)
         # socket = node_tree.interface.new_socket(socket_name, socket_type=socket_type)
         socket = node_tree.interface.new_socket(socket_name, socket_type="NodeSocketVector")
+        socket.name = socket_name
         socket.from_socket(node, node.outputs[0])
-        socket = node_tree.interface.items_tree[node_type.bl_rna.name]
+        # socket = node_tree.interface.items_tree[node_type.bl_rna.name]
+        socket = node_tree.interface.items_tree[socket_name]
 
         print(socket.name)
         socket_inputs = BNodeTree(node_tree).inputs
