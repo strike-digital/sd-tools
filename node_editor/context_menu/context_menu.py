@@ -1,6 +1,5 @@
 import bpy
 import bpy.types as btypes
-
 from sd_tools.node_editor.context_menu.context_menu_ops import get_base_socket_type
 
 from ...bhelpers import BNodeTree
@@ -22,15 +21,30 @@ from .context_menu_ops import (
     SD_OT_extract_node_prop_to_named_attr as extract_to_named_attr_op,
 )
 from .context_menu_ops import SD_OT_extract_node_to_group_input as extract_node_op
-from .context_menu_ops import get_active_node_tree
+from .context_menu_ops import (
+    get_active_node_tree,
+)
 
+# Types that are only compatible with themselves
 compatible_with = {
-    "NodeSocketGeometry": {"NodeSocketGeometry"},
+    "NodeSocketGeometry": set(),
+    "NodeSocketCollection": set(),
+    "NodeSocketImage": set(),
+    "NodeSocketObject": set(),
     "NodeSocketString": set(),
     "NodeSocketShader": set(),
+    "NodeSocketMatrix": set(),
 }
 
-common_types = {"NodeSocketInt", "NodeSocketVector", "NodeSocketColor", "NodeSocketBool", "NodeSocketFloat"}
+# Types that are compatible with themselves and each other
+common_types = {
+    "NodeSocketInt",
+    "NodeSocketVector",
+    "NodeSocketColor",
+    "NodeSocketBool",
+    "NodeSocketFloat",
+    "NodeSocketRotation",
+}
 compatible_with |= {k: common_types for k in common_types}
 compatible_with = {k: v | {k} for k, v in compatible_with.items()}
 theme = bpy.context.preferences.themes[0].node_editor
