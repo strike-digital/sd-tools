@@ -3,14 +3,14 @@ from typing import Any
 import bpy
 import bpy.types as btypes
 from bpy.props import StringProperty
-from bpy.types import NodeTree
+from bpy.types import NodeSocket, NodeTree
 
 from ...bhelpers import BNodeTree
 from ...btypes import BOperator
 from ...functions import get_active_node_tree
 from ...keymap import register_keymap_item
 
-prop_names = {
+PROP_NAMES = {
     "FunctionNodeInputInt": "integer",
     "ShaderNodeValue": "default_value",
     "FunctionNodeInputVector": "vector",
@@ -20,6 +20,19 @@ prop_names = {
     "GeometryNodeInputImage": "image",
     # "GeometryNodeObjectInfo": "",
     "FunctionNodeInputString": "string",
+    "FunctionNodeInputRotation": "rotation_euler",
+}
+
+NODE_TO_PROP_TYPES = {
+    "FunctionNodeInputInt": "NodeSocketInt",
+    "ShaderNodeValue": "NodeSocketFloat",
+    "FunctionNodeInputVector": "NodeSocketVector",
+    "GeometryNodeInputMaterial": "NodeSocketMaterial",
+    "GeometryNodeInputImage": "NodeSocketImage",
+    "FunctionNodeInputBool": "NodeSocketBool",
+    "FunctionNodeInputColor": "NodeSocketColor",
+    "FunctionNodeInputString": "NodeSocketString",
+    "FunctionNodeInputRotation": "NodeSocketRotation",
 }
 
 
@@ -54,7 +67,7 @@ def hide_unused_outputs(node, exclude: set = ()):
 
 def get_modifier_input_names(m):
     keys = set()
-    for k in m.keys():
+    for k in m.properties.inputs.keys():
         if not k.endswith("_attribute_name") and not k.endswith("_use_attribute") and k.startswith("Socket_"):
             keys.add(k)
     return keys
@@ -82,10 +95,15 @@ def update_modifier_input_value(node_tree: NodeTree, inputs_dict: dict, value: A
             for modifier in obj.modifiers:
                 if modifier.type == "NODES" and modifier.node_group == node_tree:
                     # find the new key and change that property
-                    keys = get_modifier_input_names(modifier)
+                    keys = set(get_modifier_input_names(modifier))
+
+                    # keys.sort(key=lambda k: int(k.split("_")[-1]))
+                    # new_key_idx = int(keys[-1].split("_")[-1])
+
                     keys.difference_update(inputs_dict[modifier.name])
                     new_key = list(keys)[0]
-                    modifier[new_key] = value
+                    getattr(modifier.properties.inputs, new_key).value = value
+                    # modifier[new_key] = value
 
 
 @BOperator("sd", label="Extract to node", undo=True)
@@ -103,7 +121,7 @@ class SD_OT_extract_node_prop(BOperator.type):
         "RGB": "FunctionNodeInputColor",
     }
 
-    prop_names = prop_names
+    prop_names = PROP_NAMES
 
     @classmethod
     def poll(cls, context):
@@ -168,7 +186,7 @@ class SD_OT_extract_node_prop_to_named_attr(BOperator.type):
         "RGB": "FLOAT_COLOR",
     }
 
-    prop_names = prop_names
+    prop_names = PROP_NAMES
 
     name: StringProperty()
     type: StringProperty()
@@ -269,13 +287,22 @@ class SD_OT_extract_node_prop_to_group_input(BOperator.type):
         # node_tree.interface.new_socket(socket_type=type(socket).__name__, name=socket.name)
         modifier_inputs = get_modifier_inputs_dict(node_tree)
 
-        new_socket = node_tree.interface.new_socket(socket_type=get_base_socket_type(socket), name=socket.name)
+        new_socket: NodeSocket = node_tree.interface.new_socket(
+            socket_type=get_base_socket_type(socket), name=socket.name
+        )
         new_socket.from_socket(orig_node, socket)
 
         update_modifier_input_value(node_tree, modifier_inputs, socket.default_value)
+        # Update the value in every instance of the node group
+        for nt in bpy.data.node_groups:
+            for n in nt.nodes:
+                if n.type != "GROUP":
+                    continue
+                if n.node_tree == node_tree:
+                    n.inputs[new_socket.identifier].default_value = new_socket.default_value
 
         node_tree.links.new(node.outputs[new_socket.name], socket)
-        hide_unused_outputs(node, exclude={-1, new_socket.name})
+        hide_unused_outputs(node, exclude={new_socket.name})
 
         for node in node_tree.nodes:
             if node.bl_idname == "NodeGroupInput":
@@ -286,18 +313,7 @@ class SD_OT_extract_node_prop_to_group_input(BOperator.type):
 class SD_OT_extract_node_to_group_input(BOperator.type):
     """Extract this node as an input parameter for this node group"""
 
-    types = {
-        "FunctionNodeInputInt": "NodeSocketInt",
-        "ShaderNodeValue": "NodeSocketFloat",
-        "FunctionNodeInputVector": "NodeSocketVector",
-        "GeometryNodeInputMaterial": "NodeSocketMaterial",
-        "GeometryNodeInputImage": "NodeSocketImage",
-        "FunctionNodeInputBool": "NodeSocketBool",
-        "FunctionNodeInputColor": "NodeSocketColor",
-        "FunctionNodeInputString": "NodeSocketString",
-    }
-
-    prop_names = prop_names
+    prop_names = PROP_NAMES
 
     with_subtype: bpy.props.BoolProperty(default=True)
 
@@ -317,7 +333,7 @@ class SD_OT_extract_node_to_group_input(BOperator.type):
         else:
             return False
 
-        if not node_tree.nodes.active or node_tree.nodes.active.bl_idname not in cls.types:
+        if not node_tree.nodes.active or node_tree.nodes.active.bl_idname not in NODE_TO_PROP_TYPES:
             return False
         return True
 
@@ -327,7 +343,7 @@ class SD_OT_extract_node_to_group_input(BOperator.type):
         node: btypes.Node = context.active_node
         socket_name = node.label if node.label else node.name
         to_socket = []
-        socket_type = self.types[node.bl_idname]
+        socket_type = NODE_TO_PROP_TYPES[node.bl_idname]
         node_type = getattr(bpy.types, node.bl_idname)
         matching = False
 
@@ -369,7 +385,6 @@ class SD_OT_extract_node_to_group_input(BOperator.type):
             for n in ng.nodes:
                 if hasattr(n, "node_tree") and n.node_tree == node_tree:
                     socket_inputs[-1].default_value = value
-                    pass
 
         # Do the same for modifiers if it is geometry nodes
         update_modifier_input_value(node_tree, modifier_inputs, value)
@@ -389,9 +404,7 @@ class SD_OT_extract_node_to_group_input(BOperator.type):
         input_node = node_tree.nodes.new("NodeGroupInput")
         input_node.label = socket_name
         input_node.location = node.location
-        for output in input_node.outputs[:-1]:
-            if output.name != socket_name:
-                output.hide = True
+        hide_unused_outputs(input_node, exclude={socket_name})
 
         # Hide the newly created socket from other input nodes
         for n in node_tree.nodes:
@@ -444,7 +457,7 @@ class SD_OT_connect_prop_to_group_input(BOperator.type):
             bpy.ops.node.add_node("INVOKE_DEFAULT", type="NodeGroupInput")
             node = context.active_node
             node.location.x = orig_node.location.x - 20 - node.width
-            hide_unused_outputs(node, exclude={self.input_index, -1})
+            hide_unused_outputs(node, exclude={self.input_index})
             bpy.ops.node.translate_attach_remove_on_cancel("INVOKE_DEFAULT")
 
         output = node.outputs[self.input_index]
@@ -567,7 +580,7 @@ class SD_OT_collapse_group_input_nodes(BOperator.type):
 
         for node in nodes:
             if node.bl_idname == "NodeGroupInput":
-                hide_unused_outputs(node, exclude={-1})
+                hide_unused_outputs(node, exclude={})
 
 
 register_keymap_item(SD_OT_collapse_group_input_nodes, key="H", alt=True)

@@ -1,5 +1,6 @@
 import bpy
 import bpy.types as btypes
+
 from sd_tools.node_editor.context_menu.context_menu_ops import get_base_socket_type
 
 from ...bhelpers import BNodeTree
@@ -21,9 +22,7 @@ from .context_menu_ops import (
     SD_OT_extract_node_prop_to_named_attr as extract_to_named_attr_op,
 )
 from .context_menu_ops import SD_OT_extract_node_to_group_input as extract_node_op
-from .context_menu_ops import (
-    get_active_node_tree,
-)
+from .context_menu_ops import get_active_node_tree
 
 # Types that are only compatible with themselves
 compatible_with = {
