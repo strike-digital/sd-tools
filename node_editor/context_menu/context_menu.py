@@ -1,10 +1,12 @@
 import bpy
 import bpy.types as btypes
+from bpy.types import UILayout
 
 from sd_tools.node_editor.context_menu.context_menu_ops import get_base_socket_type
 
 from ...bhelpers import BNodeTree
 from ...btypes import BMenu
+from ...keymap import register_keymap_item
 from .context_menu_ops import (
     SD_OT_collapse_group_input_nodes as collapse_group_inputs_op,
 )
@@ -98,6 +100,21 @@ class SD_MT_named_attribute_menu(btypes.Menu):
             op = layout.operator(extract_to_named_attr_op.bl_idname, text=attr)
             op.name = attr
             op.type = type
+
+
+@BMenu(label="Navigate Node Path")
+class SD_MT_navigate_node_path(btypes.Menu):
+    def draw(self, context):
+        layout: UILayout = self.layout
+        pie = layout.menu_pie()
+        op = pie.operator("node.group_edit", text="Go up...")
+        op.exit = True
+        op = pie.operator("node.group_edit", text="Go down...")
+        op.exit = False
+
+
+props = register_keymap_item("wm.call_menu_pie", key="M")
+props.name = SD_MT_navigate_node_path.bl_idname
 
 
 def button_context_menu_draw(self, context):
